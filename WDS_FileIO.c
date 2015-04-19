@@ -31,20 +31,15 @@ int Exist(const char* Filename)
 
 int Write(const char* Filename, const char* Data, size_t Length)
 {
-	int res = 1;
-
 	if (Length > 0)
 	{
-		FILE *fil = fopen(Filename, "w");
+		FILE *fil = fopen(Filename, "wb");
 
 		if (fil != NULL)
-		if (fwrite(Data, sizeof(char), Length, fil) == 0)
-			res = errno;
-		else
-		{
-			sprintf(logbuffer, "[S] Error while writing the File: %s (%d) ", Filename, errno);
-			logger(logbuffer);
-		}
+			if (fwrite(Data, Length, Length, fil) > 0)
+				return 0;
+			else
+				return errno;
 
 		if (fil != NULL)
 			fclose(fil);
@@ -55,14 +50,16 @@ int Write(const char* Filename, const char* Data, size_t Length)
 
 int Read(const char* Filename, char* content, size_t Length)
 {
-	int res = 1;
-	FILE *fil = fopen(Filename, "r");
+	FILE *fil = fopen(Filename, "rb");
 
-	if ((fil != NULL) && (fread(content, 1, Length, fil) == 0))
+	if (fil != NULL)
 	{
-		fclose(fil);
-		res = 0;
+		if (fread(content, 1, Length, fil) > 0)
+		{
+			fclose(fil);
+			return 0;
+		}
 	}
 
-	return res;
+	return errno;
 }
