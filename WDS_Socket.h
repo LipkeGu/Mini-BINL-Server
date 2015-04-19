@@ -20,6 +20,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef WDS_SOCKET_H_
 #define WDS_SOCKET_H_
 
+#define SYSARCH_INTEL_X86		0
+#define SYSARCH_INTEL_X64		6
+#define SYSARCH_INTEL_X64EFI	7
+
 char buff[1024];
 void WDS_Recv(int con);
 int start(uint16_t port);

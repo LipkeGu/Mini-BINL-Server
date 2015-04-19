@@ -12,6 +12,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+
+#define _CRT_SECURE_NO_WARNINGS
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
 #include "WDS.h"
 
@@ -34,28 +36,31 @@ int GetClientinfo(int Device, int arch, unsigned char* hwadr, unsigned char* gui
 			guid[8], guid[9], guid[10], guid[11], guid[12], guid[13], guid[14], guid[15]);
 		logger(logbuffer);
 
-		if (arch == 0)
+		
+		switch (arch)
 		{
-			sprintf(logbuffer, "ARCH: x86\n");
-			logger(logbuffer);
+			case SYSARCH_INTEL_X86:
+				sprintf(logbuffer, "ARCH: x86\n");
+				logger(logbuffer);
+				break;
+			case SYSARCH_INTEL_X64:
+				sprintf(logbuffer, "ARCH: x64\n");
+				logger(logbuffer);
+				break;
+			case SYSARCH_INTEL_X64EFI:
+				sprintf(logbuffer, "ARCH: x64 / UEFI\n");
+				logger(logbuffer);
+				break;
+			default:
+				sprintf(logbuffer, "ARCH: Unknown (%d)\n", arch);
+				logger(logbuffer);
+
+				#ifdef _WIN32		
+					print_wdsnbp_options(wds_options);
+				#endif
+				break;
 		}
-
-		if (arch == 6)
-		{
-			sprintf(logbuffer, "ARCH: x64\n");
-			logger(logbuffer);
-		}
-
-		if (arch == 7)
-		{
-			sprintf(logbuffer, "ARCH: EFI x64\n");
-			logger(logbuffer);
-		}
-
-		#ifdef _WIN32		
-			print_wdsnbp_options(wds_options);
-		#endif
-
+	
 		Server.RequestID = Server.RequestID + 1;
 
 		if (Server.RequestID == 99)
@@ -70,19 +75,23 @@ int GetClientinfo(int Device, int arch, unsigned char* hwadr, unsigned char* gui
 
 void selectBootFile(int arch, char* Bootfile, char* BootStore)
 {
-	if (arch == 6)
+	switch (arch)
 	{
+	case SYSARCH_INTEL_X86:
+		sprintf(Bootfile, "\\Boot\\x86\\pxeboot.n12");
+		sprintf(BootStore, "\\Boot\\x86\\default.bcd");
+		break;
+	case SYSARCH_INTEL_X64:		
 		sprintf(Bootfile, "\\Boot\\x64\\pxeboot.n12");
 		sprintf(BootStore, "\\Boot\\x64\\default.bcd");
+		break;
+	case SYSARCH_INTEL_X64EFI:
+		break;
+	default:
+		sprintf(Bootfile, "\\pxelinux.0");
+		sprintf(BootStore, "");
+		break;
 	}
-	else
-		if (arch == 0)
-		{
-			sprintf(Bootfile, "\\Boot\\x86\\pxeboot.n12");
-			sprintf(BootStore, "\\Boot\\x86\\default.bcd");
-		}
-		else
-			sprintf(Bootfile, "\\startrom.0");
 }
 
 int GetPacketType(int con, char* Data, size_t Packetlen)
