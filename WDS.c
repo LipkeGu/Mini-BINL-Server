@@ -75,9 +75,6 @@ void handle_args(int data_len, char* Data[])
 		{
 			if (memcmp(Data[i], "-datadir", 9) == 0) /* root Directory */
 				sprintf(config.server_root, "%s", Data[(i + 1)]);
-
-			if (memcmp(Data[i], "-AUC", 4) == 0) /* Allow Unknown Clients */
-				sprintf(config.AllowUnknownClients, "%d", atoi(Data[(i + 1)]));
 		}
 }
 
@@ -184,44 +181,4 @@ uint32_t IP2Bytes(const char* IP_address)
 	return ipvalue.s_addr;
 }
 
-size_t CopyBootPOption(char* dest, char* src, size_t offset)
-{
-	if (offset != NULL)
-	{
-		memcpy(dest, &src[offset], 1);
-		memcpy(dest, &src[(offset + 1)], src[(offset + 1)]);
-		memcpy(dest, &src[offset + 2], src[(offset + 2)]);
-
-		printf("%d copied to destination...\n", src[(offset + 1)]);
-		return src[(offset + 1)];
-	}
-	else
-		return 0;
-}
-
-int IsApprovalDone()
-{
-	int Done = 0;
-	
-	if (config.AllowUnknownClients == 0)
-	{
-		Done = GetClientRule(Client.hw_address, Client.ClientGuid);
-		Client.ActionDone = Done;
-		
-		if (Done == 1)
-			Client.Action = WDSBP_OPTVAL_ACTION_APPROVAL;
-		else
-			Client.Action = WDSBP_OPTVAL_ACTION_ABORT;
-		
-		return Done;
-	}
-	else
-	{
-		Client.Action = WDSBP_OPTVAL_ACTION_APPROVAL;
-		Client.ActionDone = 1;
-
-		return 1;
-	}
-		
-}
 

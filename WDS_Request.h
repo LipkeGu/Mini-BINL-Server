@@ -91,6 +91,6 @@ char BootStore[64];
 
 int GetPacketType(int con, char* Data, size_t Datalen);
 int Handle_NBP_Request(int con, char* Data, size_t Packetlen, int arch, int found);
-int GetClientinfo(int Device, int arch, unsigned char* hwadr, unsigned char* guid, unsigned char* wds_options);
+int GetClientinfo(int arch, unsigned char* hwadr, unsigned char* guid, int found);
 
 #endif

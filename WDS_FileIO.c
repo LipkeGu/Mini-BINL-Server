@@ -31,8 +31,8 @@ int Exist(const char* Filename)
 
 int GetClientRule(const unsigned char* hwadr, const unsigned char* cguid)
 {
-	unsigned char* MAC[6];
-	int found = 0;
+	unsigned char* MAC[6] = { "" };
+	int Action = WDSBP_OPTVAL_ACTION_ABORT;
 	int MacsFound = 0;
 	int GuidsFound = 0;
 
@@ -42,11 +42,11 @@ int GetClientRule(const unsigned char* hwadr, const unsigned char* cguid)
 	{
 		while (!feof(fil))
 		{
-			if (fscanf(fil, "%02X-%02X-%02X-%02X-%02X-%02X\n",
-				&MAC[0], &MAC[1], &MAC[2], &MAC[3], &MAC[4], &MAC[5]));
+			fscanf(fil, "%02X-%02X-%02X-%02X-%02X-%02X | %d\n", &MAC[0], &MAC[1], &MAC[2], &MAC[3], &MAC[4], &MAC[5], &Action);
 
-			if (MAC[0] == hwadr[0] && MAC[1] == hwadr[1] && MAC[2] == hwadr[2] && \
-				MAC[3] == hwadr[3] && MAC[4] == hwadr[4] && MAC[5] == hwadr[5])
+			if (memcmp(&MAC[0], &hwadr[0], 1) == 0 && memcmp(&MAC[1], &hwadr[1], 1) == 0 && memcmp(&MAC[2], &hwadr[2], 1) == 0 && \
+				memcmp(&MAC[3], &hwadr[3], 1) == 0 && memcmp(&MAC[4], &hwadr[4], 1) == 0 && memcmp(&MAC[5], &hwadr[5], 1) == 0)
+
 				MacsFound = MacsFound + 1;
 		}
 
@@ -54,14 +54,40 @@ int GetClientRule(const unsigned char* hwadr, const unsigned char* cguid)
 
 		if (MacsFound > 0)
 		{
+			
 			if (MacsFound > 1) /* Only allow ONE MAC! */
-				return 0;
+				return WDSBP_OPTVAL_ACTION_ABORT;
 
 			if (MacsFound == 1)
-				return 1;
+				return Action;
+			else
+				return WDSBP_OPTVAL_ACTION_ABORT;
 		}
 		else
-			return 0;
+			return WDSBP_OPTVAL_ACTION_ABORT;
 	}
+	else
+		return WDSBP_OPTVAL_ACTION_ABORT;
+}
+
+int GetServerSettings()
+{
+	FILE *fil = fopen("Settings.txt", "r");
+
+	if (fil != NULL)
+	{
+		while (!feof(fil))
+		{
+			fscanf(fil, "CurrentIDs: %d\n", &Server.RequestID);
+			fscanf(fil, "PollIntervall: %d\n", &config.PollIntervall);
+			fscanf(fil, "TFTPRetryCount: %d\n", &config.TFTPRetryCount);
+			fscanf(fil, "AllowUnknownClients: %d\n", &config.AllowUnknownClients);
+			fscanf(fil, "VersionQuery: %d\n", &config.AllowUnknownClients);
+			fscanf(fil, "DefaultAction: %d\n", &config.DefaultAction);
+		}
+
+		fclose(fil);
+	}
+
 	return 0;
 }

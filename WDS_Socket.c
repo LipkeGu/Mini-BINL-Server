@@ -74,6 +74,12 @@ void WDS_Recv(int con)
 
 		if (retval > 0)
 			GetPacketType(con, buff, retval);
+		else
+		{
+			sprintf(logbuffer, "[E] socket(): Cant create Socket (UDP) %d!\n", config.port);
+			logger(logbuffer);
+			break;
+		}
 	}
 }
 

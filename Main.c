@@ -20,19 +20,23 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 int main(int argc, char* argv[])
 {
+	Server.RequestID = 7;
+	config.AllowUnknownClients = 0;
+	config.VersionQuery = 0;
+	config.PollIntervall = 6;
+	config.TFTPRetryCount = 3;
 	config.port = WDS_LISTEN_PORT;
 	sprintf(Server.dnsdomain, "%s", "localdomain.local");
-	Server.RequestID = 1;
-	config.AllowUnknownClients = 0;
-	config.VersionQuery = 1;
-	config.PollIntervall = 14;
+	GetServerSettings();
 	
+	
+	Client.ActionDone = 0;
+	Client.Action = WDSBP_OPTVAL_ACTION_APPROVAL;
+
 	if (config.AllowUnknownClients == 1)
 		config.NeedsApproval = 0;
 	else
 		config.NeedsApproval = 1;
-
-	Client.Action = WDSBP_OPTVAL_ACTION_APPROVAL;
 
 #ifdef _WIN32
 	sprintf(config.server_root, "%s", replace_str("D:#reminst", "#", DS));
