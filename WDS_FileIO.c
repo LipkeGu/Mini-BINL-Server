@@ -29,37 +29,39 @@ int Exist(const char* Filename)
 		return -1;
 }
 
-int Write(const char* Filename, const char* Data, size_t Length)
+int GetClientRule(const unsigned char* hwadr, const unsigned char* cguid)
 {
-	if (Length > 0)
-	{
-		FILE *fil = fopen(Filename, "wb");
+	unsigned char* MAC[6];
+	int found = 0;
+	int MacsFound = 0;
+	int GuidsFound = 0;
 
-		if (fil != NULL)
-			if (fwrite(Data, Length, Length, fil) > 0)
-				return 0;
-			else
-				return errno;
-
-		if (fil != NULL)
-			fclose(fil);
-	}
-
-	return errno;
-}
-
-int Read(const char* Filename, char* content, size_t Length)
-{
-	FILE *fil = fopen(Filename, "rb");
+	FILE *fil = fopen("Clients.txt", "r");
 
 	if (fil != NULL)
 	{
-		if (fread(content, 1, Length, fil) > 0)
+		while (!feof(fil))
 		{
-			fclose(fil);
-			return 0;
-		}
-	}
+			if (fscanf(fil, "%02X-%02X-%02X-%02X-%02X-%02X\n",
+				&MAC[0], &MAC[1], &MAC[2], &MAC[3], &MAC[4], &MAC[5]));
 
-	return errno;
+			if (MAC[0] == hwadr[0] && MAC[1] == hwadr[1] && MAC[2] == hwadr[2] && \
+				MAC[3] == hwadr[3] && MAC[4] == hwadr[4] && MAC[5] == hwadr[5])
+				MacsFound = MacsFound + 1;
+		}
+
+		fclose(fil);
+
+		if (MacsFound > 0)
+		{
+			if (MacsFound > 1) /* Only allow ONE MAC! */
+				return 0;
+
+			if (MacsFound == 1)
+				return 1;
+		}
+		else
+			return 0;
+	}
+	return 0;
 }

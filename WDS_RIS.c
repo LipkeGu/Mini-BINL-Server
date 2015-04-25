@@ -151,7 +151,7 @@ int Handle_NCQ_Request(int con, char* Data, size_t Packetlen)
 			memcpy(&packet[offset], &res, sizeof(res));
 			offset += sizeof(res);
 
-			sprintf(logbuffer, "ERROR: Driver not found (PCI\\VEN_%X&DEV_%X)\n",
+			sprintf(logbuffer, "[E]: Driver not found (PCI\\VEN_%X&DEV_%X)\n",
 				SWAB16(vid), SWAB16(pid));
 			logger(logbuffer);
 

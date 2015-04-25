@@ -64,7 +64,6 @@ int retval, m_socket;
 socklen_t fromlen;
 char ServerOSName[64];
 
-
 #ifdef _WIN32
 #define MSG_DONTWAIT		0
 #endif
@@ -108,6 +107,11 @@ struct server_config
 {
 	uint16_t	port;
 	char		server_root[256];
+	int			NeedsApproval;
+	int			PollIntervall;
+	int			VersionQuery;
+	int			AllowUnknownClients;
+
 } config;
 
 struct Client_Info
@@ -116,6 +120,10 @@ struct Client_Info
 	unsigned char hw_address[6];
 	unsigned char ClientGuid[17];
 	unsigned char IPAddress[4];
+	int	ActionDone;
+	int	Action;
+	int Version;
+
 } Client;
 
 struct Server_Info
@@ -139,6 +147,7 @@ void Set_Size(size_t Newsize);
 void Set_EoP(unsigned char neweop);
 void Set_PKTLength();
 void print_values(int data_len, char* Data[]);
+size_t CopyBootPOption(char* dest, char* src, size_t offset);
 
 #ifdef _WIN32
 int startWinsock(void);
@@ -164,5 +173,13 @@ const char* hostname_to_ip(const char* hostname);
 unsigned char get_string(FILE *fd, char* dest, size_t size);
 void print_wdsnbp_options(unsigned char* wds_options);
 uint32_t IP2Bytes(const char* IP_address);
+int CheckDHCPPacketType(int src);
+int IsApprovalDone();
+#define LOOKING_FOR_POLICY		"Server is looking for Policy..."
+#define FILE_NOT_FOUND			"The required file for this client was not found on the server..."
+#define CLIENT_IS_BANNED		"This Client is not allowed to connect"
+#define CLIENT_ACCEPTED			"OK..."
+#define REQUEST_ABORTED			"Request was aborted..."
+
 
 #endif /* WDS_H_ */

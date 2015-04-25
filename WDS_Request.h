@@ -17,34 +17,74 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #ifndef WDS_PACKET_H_
 #define WDS_PACKET_H_
-#define DHCP_MINIMAL_PACKET_SIZE	290
+#define DHCP_MINIMAL_PACKET_SIZE			296
 
-#define BOOTP_REPLY					2
-#define BOOTP_REQUEST				1
-#define DHCP_RESP_ACK				5
-#define	DHCP_RESP_OFF				2
+#define BOOTP_REQUEST						1
+#define BOOTP_REPLY						2
 
-#define WDSNBP_RPCPORT				5040
-#define WDSNBP_UNDIVER				2010
+#define DHCP_RESP_DISCOVER					1
+#define	DHCP_RESP_OFFEER					2
+#define	DHCP_RESP_REQEST					3
+#define DHCP_RESP_ACK						5
 
-#define BOOTP_OFFSET_HWTYPE			1
-#define BOOTP_OFFSET_MACLEN			2
-#define BOOTP_OFFSET_HOPS			3
-#define	BOOTP_OFFSET_TRANSID		4
-#define BOOTP_OFFSET_SECONDS		8
-#define	BOOTP_OFFSET_ADDRPADD		10	
-#define BOOTP_OFFSET_YOURIP			12
-#define BOOTP_OFFSET_CLIENTIP		16
-#define	BOOTP_OFFSET_RELAYIP		24
-#define BOOTP_OFFSET_MACADDR		28
-#define BOOTP_OFFSET_MACPADDING		34
+#define WDSBP_OPT_ARCHITECTURE              1
+#define WDSBP_OPT_NEXT_ACTION               2
+#define WDSBP_OPT_POLL_INTERVAL             3
+#define WDSBP_OPT_POLL_RETRY_COUNT          4
+#define WDSBP_OPT_REQUEST_ID                5
+#define WDSBP_OPT_MESSAGE                   6
+#define WDSBP_OPT_VERSION_QUERY             7
+#define WDSBP_OPT_SERVER_VERSION            8
+#define WDSBP_OPT_REFERRAL_SERVER           9
+#define WDSBP_OPT_PXE_CLIENT_PROMPT         11
+#define WDSBP_OPT_PXE_PROMPT_DONE           12
+#define WDSBP_OPT_NBP_VER                   13
+#define WDSBP_OPT_ACTION_DONE               14
+#define WDSBP_OPT_ALLOW_SERVER_SELECTION    15
+#define WDSBP_OPT_SERVER_FEATURES           16
+#define WDSBP_OPT_END						255
 
-#define BOOTP_OFFSET_COOKIE			236
-#define BOOTP_OFFSET_VENOPTION		243
-#define BOOTP_OFFSET_GUID			257
-#define BOOTP_OFFSET_WDSNBP			277
-#define BOOTP_OFFSET_OPTIONS		279		/* WDSNBP */
-#define BOOTP_OFFSET_SYSARCH		289		/* WDSNBP */
+//
+// Values for WDSBP_OPT_NEXT_ACTION Option.
+//
+
+#define WDSBP_OPTVAL_ACTION_APPROVAL		1
+#define WDSBP_OPTVAL_ACTION_REFERRAL		3
+#define WDSBP_OPTVAL_ACTION_ABORT			5
+
+//
+// Values for WDSBP_OPT_PXE_CLIENT_PROMPT and WDSBP_OPT_PXE_PROMPT_DONE.
+//
+
+#define WDSBP_OPTVAL_PXE_PROMPT_OPTIN		1
+#define WDSBP_OPTVAL_PXE_PROMPT_NOPROMPT	2
+#define WDSBP_OPTVAL_PXE_PROMPT_OPTOUT		3
+
+//
+// Values for WDSBP_OPT_NBP_VER.
+//
+
+#define WDSBP_OPTVAL_NBP_VER_7				0x0700
+#define WDSBP_OPTVAL_NBP_VER_8				0x0800
+
+#define BOOTP_OFFSET_HWTYPE				1
+#define BOOTP_OFFSET_MACLEN				2
+#define BOOTP_OFFSET_HOPS					3
+#define	BOOTP_OFFSET_TRANSID				4
+#define BOOTP_OFFSET_SECONDS				8
+#define	BOOTP_OFFSET_BOOTPFLAGS			10	
+#define BOOTP_OFFSET_YOURIP				12
+#define BOOTP_OFFSET_CLIENTIP				16
+#define	BOOTP_OFFSET_RELAYIP				24
+#define BOOTP_OFFSET_MACADDR				28
+#define BOOTP_OFFSET_MACPADDING			34
+
+#define BOOTP_OFFSET_COOKIE				236
+#define BOOTP_OFFSET_VENOPTION				243
+#define BOOTP_OFFSET_GUID					257
+#define BOOTP_OFFSET_WDSNBP				277
+#define BOOTP_OFFSET_OPTIONS				279		/* WDSNBP */
+#define BOOTP_OFFSET_SYSARCH				289		/* WDSNBP */
 
 char Bootfile[128];
 char BootStore[64];

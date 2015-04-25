@@ -72,8 +72,13 @@ void handle_args(int data_len, char* Data[])
 
 	if (data_len > 1)
 		for (i = 0; i < data_len; i++)
-			if (memcmp(Data[i], "--datadir", 9) == 0) /* root Directory */
-				sprintf(config.server_root, "%s", Data[(i + 1)]);			
+		{
+			if (memcmp(Data[i], "-datadir", 9) == 0) /* root Directory */
+				sprintf(config.server_root, "%s", Data[(i + 1)]);
+
+			if (memcmp(Data[i], "-AUC", 4) == 0) /* Allow Unknown Clients */
+				sprintf(config.AllowUnknownClients, "%d", atoi(Data[(i + 1)]));
+		}
 }
 
 char* replace_str(const char* str, const char* old, const char* new)
@@ -171,19 +176,6 @@ unsigned char get_string(FILE *fd, char* dest, size_t size)
 	return c;
 }
 
-#ifdef _WIN32
-void print_wdsnbp_options(unsigned char* wds_options)
-{
-	int pos = 279;
-
-	for (int i = 0; i < 12; i++)
-	{
-		printf("WDS Option %d (%d): %02x\n", i, pos, wds_options[i]);
-		pos = pos + 1;
-	}
-}
-#endif
-
 uint32_t IP2Bytes(const char* IP_address)
 {
 	struct in_addr ipvalue;
@@ -192,16 +184,44 @@ uint32_t IP2Bytes(const char* IP_address)
 	return ipvalue.s_addr;
 }
 
-int Handle_VendorInfo(char* VenString, int VenStrLen)
+size_t CopyBootPOption(char* dest, char* src, size_t offset)
 {
-	if (VenStrLen < 10)
-		if (memcmp(VenString, "PXEClient", VenStrLen) == 0) /* Length 9 Chars */
-			return 0;
+	if (offset != NULL)
+	{
+		memcpy(dest, &src[offset], 1);
+		memcpy(dest, &src[(offset + 1)], src[(offset + 1)]);
+		memcpy(dest, &src[offset + 2], src[(offset + 2)]);
+
+		printf("%d copied to destination...\n", src[(offset + 1)]);
+		return src[(offset + 1)];
+	}
+	else
+		return 0;
+}
+
+int IsApprovalDone()
+{
+	int Done = 0;
+	
+	if (config.AllowUnknownClients == 0)
+	{
+		Done = GetClientRule(Client.hw_address, Client.ClientGuid);
+		Client.ActionDone = Done;
+		
+		if (Done == 1)
+			Client.Action = WDSBP_OPTVAL_ACTION_APPROVAL;
 		else
-			return 1;
+			Client.Action = WDSBP_OPTVAL_ACTION_ABORT;
+		
+		return Done;
+	}
 	else
 	{
-		printf(logbuffer, "[I] BOOTP: Option 60 contains embedded informations! (%s)\n", VenString);
-		return 0;
+		Client.Action = WDSBP_OPTVAL_ACTION_APPROVAL;
+		Client.ActionDone = 1;
+
+		return 1;
 	}
+		
 }
+

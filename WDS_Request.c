@@ -19,7 +19,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 int GetClientinfo(int Device, int arch, unsigned char* hwadr, unsigned char* guid, unsigned char* wds_options)
 {
-	if (Device != -1)
+	Client.Version = (int)wds_options[2];
+	
+	if (Client.ActionDone == 1)
 	{
 		sprintf(logbuffer, "============== WDS Client ==============\n");
 		logger(logbuffer);
@@ -31,33 +33,49 @@ int GetClientinfo(int Device, int arch, unsigned char* hwadr, unsigned char* gui
 		sprintf(logbuffer, "CLIENT IP: %s\n", inet_ntoa(from.sin_addr));
 		logger(logbuffer);
 
+		sprintf(logbuffer, "WDSNBP Version: %d\n", Client.Version);
+		logger(logbuffer);
+
 		sprintf(logbuffer, "GUID: %02X%02X%02X%02X-%02X%02X-%02X%02X-%02X%02X-%02X%02X%02X%02X%02X%02X\n",
 			guid[0], guid[1], guid[2], guid[3], guid[4], guid[5], guid[6], guid[7], 
 			guid[8], guid[9], guid[10], guid[11], guid[12], guid[13], guid[14], guid[15]);
 		logger(logbuffer);
 
-		
 		switch (arch)
 		{
 			case SYSARCH_INTEL_X86:
 				sprintf(logbuffer, "ARCH: x86\n");
 				logger(logbuffer);
 				break;
+			case SYSARCH_NEC_PC98:
+				sprintf(logbuffer, "ARCH: NEC PC98\n");
+				logger(logbuffer);
+				break;
+			case SYSARCH_INTEL_IA64:
+				sprintf(logbuffer, "ARCH: IA64\n");
+				logger(logbuffer);
+				break;
+			case SYSARCH_DEC_ALPHA:
+				sprintf(logbuffer, "ARCH: DEC Alpha\n");
+				logger(logbuffer);
+				break;
+			case SYSARCH_ARC_x86:
+				sprintf(logbuffer, "ARCH: ARC x86\n");
+				logger(logbuffer);
+				break;
+			case SYSARCH_INTEL_LEAN:
+				sprintf(logbuffer, "ARCH: INTEL LEAN\n");
+				logger(logbuffer);
+				break;
 			case SYSARCH_INTEL_X64:
 				sprintf(logbuffer, "ARCH: x64\n");
 				logger(logbuffer);
 				break;
-			case SYSARCH_INTEL_X64EFI:
+			case SYSARCH_INTEL_EFI:
 				sprintf(logbuffer, "ARCH: x64 / UEFI\n");
 				logger(logbuffer);
 				break;
 			default:
-				sprintf(logbuffer, "ARCH: Unknown (%d)\n", arch);
-				logger(logbuffer);
-
-				#ifdef _WIN32		
-					print_wdsnbp_options(wds_options);
-				#endif
 				break;
 		}
 	
@@ -65,12 +83,9 @@ int GetClientinfo(int Device, int arch, unsigned char* hwadr, unsigned char* gui
 
 		if (Server.RequestID == 99)
 			Server.RequestID = 1;
-
-		return 1;
 	}
-	else
-		return 0;
-				
+
+	return Client.ActionDone;
 }
 
 void selectBootFile(int arch, char* Bootfile, char* BootStore)
@@ -78,14 +93,40 @@ void selectBootFile(int arch, char* Bootfile, char* BootStore)
 	switch (arch)
 	{
 	case SYSARCH_INTEL_X86:
-		sprintf(Bootfile, "\\Boot\\x86\\pxeboot.n12");
-		sprintf(BootStore, "\\Boot\\x86\\default.bcd");
+		if (Client.Action != WDSBP_OPTVAL_ACTION_ABORT)
+		{
+			sprintf(Bootfile, "\\Boot\\x86\\pxeboot.n12");
+			sprintf(BootStore, "\\Boot\\x86\\default.bcd");
+		}
+		else
+		{
+			sprintf(Bootfile, "\\Boot\\x86\\abortpxe.com");
+			sprintf(BootStore, "\\Boot\\x86\\default.bcd");
+		}
 		break;
-	case SYSARCH_INTEL_X64:		
-		sprintf(Bootfile, "\\Boot\\x64\\pxeboot.n12");
-		sprintf(BootStore, "\\Boot\\x64\\default.bcd");
+	case SYSARCH_INTEL_X64:
+		if (Client.Action != WDSBP_OPTVAL_ACTION_ABORT)
+		{
+			sprintf(Bootfile, "\\Boot\\x64\\pxeboot.n12");
+			sprintf(BootStore, "\\Boot\\x64\\default.bcd");
+		}
+		else
+		{
+			sprintf(Bootfile, "\\Boot\\x64\\abortpxe.com");
+			sprintf(BootStore, "\\Boot\\x86\\default.bcd");
+		}
 		break;
-	case SYSARCH_INTEL_X64EFI:
+	case SYSARCH_INTEL_EFI:
+		if (Client.Action != WDSBP_OPTVAL_ACTION_ABORT)
+		{
+			sprintf(Bootfile, "\\Boot\\EFI\\bootmgfw.efi");
+			sprintf(BootStore, "\\Boot\\EFI\\default.bcd");
+		}
+		else
+		{
+			sprintf(Bootfile, "\\Boot\\EFI\\abortpxe.efi");
+			sprintf(BootStore, "\\Boot\\x86\\default.bcd");
+		}
 		break;
 	default:
 		sprintf(Bootfile, "\\pxelinux.0");
@@ -104,9 +145,7 @@ int GetPacketType(int con, char* Data, size_t Packetlen)
 	uint32_t Packettype = 0;
 	unsigned char DHCP_MAGIC_COOKIE[4] = { 0x63, 0x82, 0x53, 0x63 };
 	unsigned char WDSC_Client_Info[1] = { 0xFA };
-	unsigned char mac[6] = "";
-	unsigned char guid[16] = "";
-	unsigned char options[12] = "";
+	unsigned char options[128] = "";
 	
 	memcpy(&Packettype, Data, sizeof(Packettype));
 
@@ -118,22 +157,22 @@ int GetPacketType(int con, char* Data, size_t Packetlen)
 	default:
 		if (memcmp(DHCP_MAGIC_COOKIE, &Data[BOOTP_OFFSET_COOKIE], sizeof(DHCP_MAGIC_COOKIE)) == 0)
 		{
-			memcpy(&mac, &Data[BOOTP_OFFSET_MACADDR], sizeof(mac));
-			memcpy(&guid, &Data[BOOTP_OFFSET_GUID], sizeof(guid));
+			memcpy(&Client.hw_address, &Data[BOOTP_OFFSET_MACADDR], sizeof(Client.hw_address));
+			memcpy(&Client.ClientGuid, &Data[BOOTP_OFFSET_GUID], sizeof(Client.ClientGuid));
 			memcpy(&options, &Data[BOOTP_OFFSET_OPTIONS], 12);
 
-			if (Packetlen >= DHCP_MINIMAL_PACKET_SIZE && memcmp(WDSC_Client_Info, &Data[BOOTP_OFFSET_WDSNBP], sizeof(WDSC_Client_Info)) == 0)
+			if (Packetlen > DHCP_MINIMAL_PACKET_SIZE && 
+				memcmp(WDSC_Client_Info, &Data[BOOTP_OFFSET_WDSNBP], 1) == 0 )
 			{
-				retval = Handle_NBP_Request(con, Data, Packetlen,
-					Data[BOOTP_OFFSET_SYSARCH], GetClientinfo(Data[287],
-					Data[BOOTP_OFFSET_SYSARCH], mac, guid, options));
-				return retval;
+				if (IsApprovalDone() == 1 && Client.ActionDone == 1)
+					retval = Handle_NBP_Request(con, Data, Packetlen, 
+					Data[BOOTP_OFFSET_SYSARCH], GetClientinfo(Data[287], \
+					Data[BOOTP_OFFSET_SYSARCH], Client.hw_address, Client.ClientGuid, options));
+				else
+					break;
 			}
 			else
-			{
 				retval = Handle_NBP_Request(con, Data, Packetlen, 0, 0);
-				return retval;
-			}
 		}
 		break;
 	}
@@ -141,17 +180,17 @@ int GetPacketType(int con, char* Data, size_t Packetlen)
 	return retval;
 }
 
+
 int setDHCPRespType(int found)
 {
 	if (found == 1)
 		return DHCP_RESP_ACK;
 	else
-		return DHCP_RESP_OFF;
+		return DHCP_RESP_OFFEER; /* Microsoft sends also ACK on offering, but we should stay RFC compilant o.o" */
 }
 
 int Handle_NBP_Request(int con, char* Data, size_t Packetlen, int arch, int found)
 {
-	
 	selectBootFile(arch, Bootfile, BootStore);
 
 	RESPsize = 0;
@@ -169,7 +208,7 @@ int Handle_NBP_Request(int con, char* Data, size_t Packetlen, int arch, int foun
 		memcpy(&RESPData[RESPsize], Bootreply, sizeof(Bootreply));
 		Set_Size(sizeof(Bootreply));
 
-		/*Hardware Type */
+		/* Hardware Type */
 		memcpy(&RESPData[RESPsize], &Data[BOOTP_OFFSET_HWTYPE], 1);
 		Set_Size(1);
 
@@ -189,7 +228,8 @@ int Handle_NBP_Request(int con, char* Data, size_t Packetlen, int arch, int foun
 		memcpy(&RESPData[RESPsize], &Data[BOOTP_OFFSET_SECONDS], 2);
 		Set_Size(2);
 
-		memcpy(&RESPData[RESPsize], &Data[BOOTP_OFFSET_ADDRPADD], 2);
+		/* BOOTP Flags */
+		memcpy(&RESPData[RESPsize], &Data[BOOTP_OFFSET_BOOTPFLAGS], 2);
 		Set_Size(2);
 
 		/* Client-IP */
@@ -220,19 +260,21 @@ int Handle_NBP_Request(int con, char* Data, size_t Packetlen, int arch, int foun
 		memcpy(&RESPData[RESPsize], Server.nbname, sizeof(Server.nbname));
 		Set_Size(sizeof(Server.nbname));
 
-		/* Bootfile */
-		memcpy(&RESPData[RESPsize], Bootfile, sizeof(Bootfile));
-		Set_Size(sizeof(Bootfile));
-		
+		if (found == 1)
+		{
+			/* Bootfile */
+			sprintf(logbuffer, "FILE: %s\n", Bootfile);
+			logger(logbuffer);
+
+			memcpy(&RESPData[RESPsize], Bootfile, sizeof(Bootfile));
+			Set_Size(sizeof(Bootfile));
+		}
+		else
+			Set_Size(128);
+
 		/* MAGIC COOKIE */
 		memcpy(&RESPData[RESPsize], &Data[BOOTP_OFFSET_COOKIE], 4);
 		Set_Size(4);
-
-		/* DHCP-Response (ACK) */
-		char DHCP_ACK[3] = { 0x35, 0x01, setDHCPRespType(found) };
-
-		memcpy(&RESPData[RESPsize], DHCP_ACK, sizeof(DHCP_ACK));
-		Set_Size(sizeof(DHCP_ACK));
 
 		/* Option Netmask (1) */
 		char netopt[6] = { 0x01, 0x04, 0xff, 0xff, 0xff, 0x00 };
@@ -258,16 +300,20 @@ int Handle_NBP_Request(int con, char* Data, size_t Packetlen, int arch, int foun
 		memcpy(&RESPData[RESPsize], &MyServerIP, sizeof(MyServerIP));
 		Set_Size(sizeof(MyServerIP));
 
-		/* DHCP-Option "Vendor-Class" (60) */
-		memcpy(&RESPData[RESPsize], &Data[BOOTP_OFFSET_VENOPTION], 11);
-		Set_Size(11);
+		/* Option Netbios Name Server (44) */
+		char WINSopt[2] = { 0x2c, 0x04 };
 
-		/* DHCP-UUID/GUID */
-		memcpy(&RESPData[RESPsize], &Data[254], 2);
-		Set_Size(2);
+		memcpy(&RESPData[RESPsize], WINSopt, sizeof(WINSopt));
+		Set_Size(sizeof(WINSopt));
 
-		memcpy(&RESPData[RESPsize], &Data[BOOTP_OFFSET_GUID], 17);
-		Set_Size(17);
+		memcpy(&RESPData[RESPsize], &MyServerIP, sizeof(MyServerIP));
+		Set_Size(sizeof(MyServerIP));
+
+		/* DHCP Response Type */
+		char DHCP_ACK[3] = { 0x35, 0x01, setDHCPRespType(found) };
+
+		memcpy(&RESPData[RESPsize], DHCP_ACK, sizeof(DHCP_ACK));
+		Set_Size(sizeof(DHCP_ACK));
 
 		/* Option Server Ident (54) */
 		char idtopt[2] = { 0x36, 0x04 };
@@ -278,20 +324,12 @@ int Handle_NBP_Request(int con, char* Data, size_t Packetlen, int arch, int foun
 		memcpy(&RESPData[RESPsize], &MyServerIP, sizeof(MyServerIP));
 		Set_Size(sizeof(MyServerIP));
 
-		/* Option Netbios Name Server (44) */
-		char WINSopt[2] = { 0x2c, 0x04 };
-
-		memcpy(&RESPData[RESPsize], WINSopt, sizeof(WINSopt));
-		Set_Size(sizeof(WINSopt));
-
-		memcpy(&RESPData[RESPsize], &MyServerIP, sizeof(MyServerIP));
-		Set_Size(sizeof(MyServerIP));
+		/* DHCP-Option "Vendor-Class" (60) */
+		memcpy(&RESPData[RESPsize], &Data[BOOTP_OFFSET_VENOPTION], 11);
+		Set_Size(11);
 
 		if (found == 1)
 		{
-			sprintf(logbuffer, "FILE: %s\n", Bootfile);
-			logger(logbuffer);
-
 			/* TFTP Server Hostname (66) */
 			char TFTPopt[2] = { 0x42, strlen(Server.nbname) };
 
@@ -300,8 +338,18 @@ int Handle_NBP_Request(int con, char* Data, size_t Packetlen, int arch, int foun
 
 			memcpy(&RESPData[RESPsize], Server.nbname, strlen(Server.nbname));
 			Set_Size(strlen(Server.nbname));
+		}
 		
-			/* Boot Configuration Store (BCD) */
+		/* DHCP-UUID / GUID (97) */
+		memcpy(&RESPData[RESPsize], &Data[254], 2);
+		Set_Size(2);
+
+		memcpy(&RESPData[RESPsize], &Data[BOOTP_OFFSET_GUID], 17);
+		Set_Size(17);
+		
+		if (found == 1)
+		{
+			/* Boot Configuration Store (252) */
 			char bcdopt[2] = { 0xfc, strlen(BootStore) };
 
 			memcpy(&RESPData[RESPsize], bcdopt, sizeof(bcdopt));
@@ -318,13 +366,16 @@ int Handle_NBP_Request(int con, char* Data, size_t Packetlen, int arch, int foun
 		}
 		else
 		{
-			char aprovalmsg[18] = { 
-			0x02, 0x01, 0x01, 0x05, 0x04, 
-			0x00, 0x00, 0x00, Server.RequestID, 0x03, 
-			0x02, 0x00, 0x14, 0x04, 0x02, 0x00, 0xba 
-			};
+			/* WDS related informations */
+			char aprovalmsg[24] = {
+				WDSBP_OPT_NEXT_ACTION, 0x01, Client.Action,
+				WDSBP_OPT_REQUEST_ID, 0x04, 0x00, 0x00, 0x00, Server.RequestID,
+				WDSBP_OPT_POLL_INTERVAL, 0x02, 0x00, config.PollIntervall,
+				WDSBP_OPT_POLL_RETRY_COUNT, 0x02, 0xfe, 0xfe,
+				WDSBP_OPT_ACTION_DONE, 0x01, Client.ActionDone,
+				WDSBP_OPT_VERSION_QUERY, 0x01, config.VersionQuery, 0xff };
 
-			char admopt[2] = { 0xfa, sizeof(aprovalmsg) };
+			char admopt[2] = { 0xfa, sizeof(aprovalmsg)};
 
 			memcpy(&RESPData[RESPsize], admopt, sizeof(admopt));
 			Set_Size(sizeof(admopt));

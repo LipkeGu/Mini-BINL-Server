@@ -15,14 +15,20 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "WDS.h"
 
-#define WDS_LISTEN_PORT		4011
+
 
 #ifndef WDS_SOCKET_H_
 #define WDS_SOCKET_H_
+#define WDS_LISTEN_PORT		4011
 
 #define SYSARCH_INTEL_X86		0
+#define SYSARCH_NEC_PC98		1
+#define SYSARCH_INTEL_IA64		2
+#define SYSARCH_DEC_ALPHA		3
+#define SYSARCH_ARC_x86		4
+#define SYSARCH_INTEL_LEAN		5
 #define SYSARCH_INTEL_X64		6
-#define SYSARCH_INTEL_X64EFI	7
+#define SYSARCH_INTEL_EFI		7
 
 char buff[1024];
 void WDS_Recv(int con);

@@ -23,6 +23,16 @@ int main(int argc, char* argv[])
 	config.port = WDS_LISTEN_PORT;
 	sprintf(Server.dnsdomain, "%s", "localdomain.local");
 	Server.RequestID = 1;
+	config.AllowUnknownClients = 0;
+	config.VersionQuery = 1;
+	config.PollIntervall = 14;
+	
+	if (config.AllowUnknownClients == 1)
+		config.NeedsApproval = 0;
+	else
+		config.NeedsApproval = 1;
+
+	Client.Action = WDSBP_OPTVAL_ACTION_APPROVAL;
 
 #ifdef _WIN32
 	sprintf(config.server_root, "%s", replace_str("D:#reminst", "#", DS));
