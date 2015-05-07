@@ -60,14 +60,14 @@ int Handle_NCQ_Request(int con, char* Data, size_t Packetlen)
 		char packet[500] = "";
 		const char ris_params[] =
 			"Description"		"2" "RIS NIC Card"
-			"Characteristics"	"1" "132"
-			"BusType"			"1" BINL_BUSTYPE_PCI;
+			"Characteristics"	"1" RIS_DRIVER_CHARACTERISTICS
+			"BusType"			"1" RIS_DRIVER_BUSTYPE_PCI;
 
 		uint32_t type = SWAB32(PKT_NCR), value = 0, res = 0;
 		size_t ulen = 0;
 
-		memcpy(&vid, &Data[0x24], sizeof(vid));
-		memcpy(&pid, &Data[0x26], sizeof(pid));
+		memcpy(&vid, &Data[RIS_DRIVER_OFFSET_VENID], sizeof(vid));
+		memcpy(&pid, &Data[RIS_DRIVER_OFFSET_DEVID], sizeof(pid));
 
 		sprintf(logbuffer, "%s", "============= Driver Query =============\n");
 		logger(logbuffer);

@@ -20,12 +20,19 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define DHCP_MINIMAL_PACKET_SIZE			296
 
 #define BOOTP_REQUEST						1
-#define BOOTP_REPLY						2
+#define BOOTP_REPLY							2
 
-#define DHCP_RESP_DISCOVER					1
-#define	DHCP_RESP_OFFEER					2
-#define	DHCP_RESP_REQEST					3
-#define DHCP_RESP_ACK						5
+#define DHCPDISCOVER						1
+#define DHCPOFFER							2
+#define DHCPREQUEST							3
+#define DHCPDECLINE							4
+#define DHCPACK								5
+#define DHCPNAK								6
+#define DHCPRELEASE							7
+#define DHCPINFORM							8
+
+#define WDSNBP_OPTION						250
+#define IPV4_ADDR_LENGTH				4
 
 #define WDSBP_OPT_ARCHITECTURE              1
 #define WDSBP_OPT_NEXT_ACTION               2
@@ -43,6 +50,25 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define WDSBP_OPT_ALLOW_SERVER_SELECTION    15
 #define WDSBP_OPT_SERVER_FEATURES           16
 #define WDSBP_OPT_END						255
+
+//
+// Bootfiles
+//
+
+#define WDS_BOOTFILE_X86		"\\Boot\\x86\\pxeboot.n12"
+#define WDS_BOOTFILE_X64		"\\Boot\\x64\\pxeboot.n12"
+#define WDS_BOOTFILE_EFI		"\\Boot\\EFI\\bootmgfw.efi"
+#define RIS_BOOTFILE_DEFAULT	"\\Boot\\winxp\\startrom.n12"
+#define WDS_BOOTFILE_UNKNOWN	"\\pxelinux.0"
+
+#define WDS_BOOTSTORE_X86		"\\Boot\\x86\\default.bcd"
+#define WDS_BOOTSTORE_X64		"\\Boot\\x64\\default.bcd"
+#define WDS_BOOTSTORE_EFI		"\\Boot\\EFI\\default.bcd"
+#define WDS_BOOTSTORE_DEFAULT	"\\Boot\\BCD"
+
+#define WDS_ABORT_BOOTFILE_X86	"\\Boot\\x86\\abortpxe.com"
+#define WDS_ABORT_BOOTFILE_X64	"\\Boot\\x64\\abortpxe.com"
+#define WDS_ABORT_BOOTFILE_EFI	"\\Boot\\EFI\\abortpxe.efi"
 
 //
 // Values for WDSBP_OPT_NEXT_ACTION Option.
@@ -67,6 +93,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define WDSBP_OPTVAL_NBP_VER_7				0x0700
 #define WDSBP_OPTVAL_NBP_VER_8				0x0800
 
+#define BOOTP_OFFSET_BOOTPTYPE				0
 #define BOOTP_OFFSET_HWTYPE				1
 #define BOOTP_OFFSET_MACLEN				2
 #define BOOTP_OFFSET_HOPS					3
@@ -81,16 +108,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #define BOOTP_OFFSET_COOKIE				236
 #define BOOTP_OFFSET_VENOPTION				243
-#define BOOTP_OFFSET_GUID					257
-#define BOOTP_OFFSET_WDSNBP				277
+#define BOOTP_OFFSET_GUID					254
+#define BOOTP_OFFSET_CARCH					273
+#define BOOTP_OFFSET_WDSNBP					277
 #define BOOTP_OFFSET_OPTIONS				279		/* WDSNBP */
 #define BOOTP_OFFSET_SYSARCH				289		/* WDSNBP */
 
-char Bootfile[128];
-char BootStore[64];
+//
+// Values for NCQ (Driver Query).
+//
 
 int GetPacketType(int con, char* Data, size_t Datalen);
-int Handle_NBP_Request(int con, char* Data, size_t Packetlen, int arch, int found);
+int Handle_NBP_Request(int con, char* Data, size_t Packetlen, int found);
 int GetClientinfo(int arch, unsigned char* hwadr, unsigned char* guid, int found);
-
 #endif

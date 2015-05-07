@@ -18,7 +18,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define RIS	1
 #define NIC_DRIVER_LIST_FILE		"Nics.txt"
 
-#define BINL_BUSTYPE_PCI			"5"
+#define RIS_DRIVER_BUSTYPE_PCI			"5"
+#define RIS_DRIVER_CHARACTERISTICS		"132"
+#define	RIS_DRIVER_OFFSET_VENID			24
+#define	RIS_DRIVER_OFFSET_DEVID			26
+
+#define PKT_NCQ		0x51434e81	/* Network Card Query */
 
 typedef struct _DRIVER
 {

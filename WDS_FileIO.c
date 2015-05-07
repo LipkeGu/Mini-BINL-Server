@@ -21,58 +21,115 @@ int Exist(const char* Filename)
 	FILE *fil = fopen(Filename, "r");
 
 	if (fil != NULL)
-	{
-		fclose(fil);
-		return 0;
-	}
+		if (fclose(fil) == 0)
+			return 0;
+		else
+			return 1;
 	else
-		return -1;
+		return 1;
 }
 
-int GetClientRule(const unsigned char* hwadr, const unsigned char* cguid)
+int GetClientRule(const unsigned char* MACb, const unsigned char* cguid)
 {
-	unsigned char* MAC[6] = { "" };
-	int Action = WDSBP_OPTVAL_ACTION_ABORT;
+	unsigned char* MACa[6] = { "" };
+	int Action = config.DefaultAction;
 	int MacsFound = 0;
 	int GuidsFound = 0;
+	int Mode = 0;
+	int i = 0;
+	int result = 0;
 
-	FILE *fil = fopen("Clients.txt", "r");
+	FILE *fil = fopen(WDS_CLIENTS_FILE, "r");
 
 	if (fil != NULL)
 	{
 		while (!feof(fil))
 		{
-			fscanf(fil, "%02X-%02X-%02X-%02X-%02X-%02X | %d\n", &MAC[0], &MAC[1], &MAC[2], &MAC[3], &MAC[4], &MAC[5], &Action);
+			if (fscanf(fil, "%X-%X-%X-%X-%X-%X | %d | %d\n", &MACa[0], &MACa[1], &MACa[2], &MACa[3], &MACa[4], &MACa[5], &Action, &Mode) > 3)
+			{
+				for (i = 0; i < 6; i++)
+					MACa[i] = (unsigned char)MACa[i];
 
-			if (memcmp(&MAC[0], &hwadr[0], 1) == 0 && memcmp(&MAC[1], &hwadr[1], 1) == 0 && memcmp(&MAC[2], &hwadr[2], 1) == 0 && \
-				memcmp(&MAC[3], &hwadr[3], 1) == 0 && memcmp(&MAC[4], &hwadr[4], 1) == 0 && memcmp(&MAC[5], &hwadr[5], 1) == 0)
-
-				MacsFound = MacsFound + 1;
+				if (memcmp(&MACa[0], &MACb[0], 1) == 0 && \
+					memcmp(&MACa[1], &MACb[1], 1) == 0 && \
+					memcmp(&MACa[2], &MACb[2], 1) == 0 && \
+					memcmp(&MACa[3], &MACb[3], 1) == 0 && \
+					memcmp(&MACa[4], &MACb[4], 1) == 0 && \
+					memcmp(&MACa[5], &MACb[5], 1) == 0)
+				{
+					MacsFound = MacsFound + 1;
+					switch (Mode)
+					{
+					case WDS_MODE_RIS:
+						Client.WDSMode = WDS_MODE_RIS;
+						break;
+					case WDS_MODE_WDS:
+						Client.WDSMode = WDS_MODE_WDS;
+						break;
+					case WDS_MODE_UNK:
+						Client.WDSMode = WDS_MODE_UNK;
+						break;
+					default:
+						Client.WDSMode = config.DefaultMode;
+						break;
+					}
+				}
+			}
 		}
 
-		fclose(fil);
-
-		if (MacsFound > 0)
+		if (fclose(fil) == 0)
 		{
-			
-			if (MacsFound > 1) /* Only allow ONE MAC! */
-				return WDSBP_OPTVAL_ACTION_ABORT;
-
-			if (MacsFound == 1)
-				return Action;
+			if (MacsFound > 0)
+			{
+				if (MacsFound > 1) /* Only allow ONE MAC! */
+				{
+#ifdef _WIN32
+					sprintf(logbuffer, "[I] Lookup Device... failed! (Macs: %d - Action: %d)\n", MacsFound, Action);
+					logger(logbuffer);
+#endif
+					Client.WDSMode = WDS_MODE_WDS;
+					return WDSBP_OPTVAL_ACTION_ABORT;
+				}
+				else
+					if (MacsFound == 1)
+						return Action;
+			}
 			else
+			{
+#ifdef _WIN32
+				sprintf(logbuffer, "[E] Client not found!\n");
+				logger(logbuffer);
+#endif
+				Client.WDSMode = WDS_MODE_WDS;
 				return WDSBP_OPTVAL_ACTION_ABORT;
+			}
 		}
 		else
+		{
+#ifdef _WIN32
+			sprintf(logbuffer, "[E] FileIO Error (while closing the file)!\n");
+			logger(logbuffer);
+#endif
+			Client.WDSMode = WDS_MODE_WDS;
 			return WDSBP_OPTVAL_ACTION_ABORT;
+		}
 	}
 	else
-		return WDSBP_OPTVAL_ACTION_ABORT;
+	{
+#ifdef _WIN32
+		sprintf(logbuffer, "[E] File not found!\n");
+		logger(logbuffer);
+#endif
+		Client.WDSMode = config.DefaultMode;
+		return config.DefaultAction;
+	}
+
+	return 0;
 }
 
 int GetServerSettings()
 {
-	FILE *fil = fopen("Settings.txt", "r");
+	FILE *fil = fopen(WDS_SETTINGS_FILE, "r");
 
 	if (fil != NULL)
 	{
@@ -83,11 +140,15 @@ int GetServerSettings()
 			fscanf(fil, "TFTPRetryCount: %d\n", &config.TFTPRetryCount);
 			fscanf(fil, "AllowUnknownClients: %d\n", &config.AllowUnknownClients);
 			fscanf(fil, "VersionQuery: %d\n", &config.AllowUnknownClients);
+			fscanf(fil, "ShowClientRequests: %d\n", &config.ShowClientRequests);
 			fscanf(fil, "DefaultAction: %d\n", &config.DefaultAction);
 		}
 
-		fclose(fil);
+		if (fclose(fil) == 0)
+			return 0;
+		else
+			return 1;
 	}
-
-	return 0;
+	else
+		return 1;
 }

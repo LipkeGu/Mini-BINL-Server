@@ -26,6 +26,15 @@ void Set_Type(uint32_t NewType)
 	Set_Size(sizeof(NewType));
 }
 
+void ZeroOut(char* Buffer, size_t length)
+{
+#ifdef _WIN32
+	ZeroMemory(Buffer, length);
+#else
+	bzero(Buffer, length);
+#endif
+}
+
 void Set_Size(size_t Newsize)
 {
 	RESPsize += Newsize;
@@ -181,4 +190,44 @@ uint32_t IP2Bytes(const char* IP_address)
 	return ipvalue.s_addr;
 }
 
+int setDHCPRespType(int found)
+{
+	if (found == 1)
+		return DHCPACK;
+	else
+		return DHCPOFFER;
+}
 
+int isValidDHCPType(int type)
+{
+	switch (type)
+	{
+	case DHCPDISCOVER:
+		return 0;
+		break;
+	case DHCPOFFER:
+		return 1;
+		break;
+	case DHCPREQUEST:
+		return 0;
+		break;
+	case DHCPDECLINE:
+		return 1;
+		break;
+	case DHCPACK:
+		return 1;
+		break;
+	case DHCPNAK:
+		return 1;
+		break;
+	case DHCPRELEASE:
+		return 1;
+		break;
+	case DHCPINFORM:
+		return 1;
+		break;
+	default:
+		return 1;
+		break;
+	}
+}

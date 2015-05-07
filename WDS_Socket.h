@@ -30,9 +30,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define SYSARCH_INTEL_X64		6
 #define SYSARCH_INTEL_EFI		7
 
-char buff[1024];
-void WDS_Recv(int con);
-int start(uint16_t port);
+int WDS_Recv_bootp(int con);
+
+int CreateSocketAndBind(uint16_t port);
+int bootp_start();
 int WDS_Send(int con, char* buf, size_t len);
 int startWinsock(void);
 

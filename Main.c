@@ -20,15 +20,23 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 int main(int argc, char* argv[])
 {
-	Server.RequestID = 7;
-	config.AllowUnknownClients = 0;
-	config.VersionQuery = 0;
-	config.PollIntervall = 6;
-	config.TFTPRetryCount = 3;
-	config.port = WDS_LISTEN_PORT;
-	sprintf(Server.dnsdomain, "%s", "localdomain.local");
-	GetServerSettings();
-	
+	config.BOOTPPort = WDS_LISTEN_PORT;
+	config.TFTPPort = 69;
+	config.DefaultAction = WDSBP_OPTVAL_ACTION_ABORT;
+	sprintf(Server.dnsdomain, "%s", WDS_DEFUALT_DOMAIN);
+	config.PXEClientPrompt = WDSBP_OPTVAL_PXE_PROMPT_OPTOUT;
+
+	if (GetServerSettings() == 1)
+	{
+		Server.RequestID = 7;
+		config.AllowUnknownClients = 0;
+		config.DefaultMode = WDS_MODE_WDS;
+		config.VersionQuery = 0;
+		config.PollIntervall = 2;
+		config.TFTPRetryCount = 5;
+		config.ShowClientRequests = 1;
+		
+	}
 	
 	Client.ActionDone = 0;
 	Client.Action = WDSBP_OPTVAL_ACTION_APPROVAL;
@@ -44,7 +52,7 @@ int main(int argc, char* argv[])
 	sprintf(config.server_root, "%s", replace_str("#mnt#reminst", "#", DS));
 #endif
 	handle_args(argc, argv);
-	start(config.port);
 
+	bootp_start();
 	return 0;
 }
