@@ -38,7 +38,6 @@ int CreateSocketAndBind(uint16_t port)
 #endif
 	int sockfd = SOCKET_ERROR;
 	struct sockaddr_in serv_addr;
-	struct ifaddrs *ifap, *ifa;
 
 	sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
@@ -145,8 +144,7 @@ int WDS_Recv_bootp(int con)
 						Client.Action = WDSBP_OPTVAL_ACTION_APPROVAL;
 						Client.ActionDone = 0;
 
-						retval = Handle_NBP_Request(con, Buffer, retval, 0, \
-							GetClientinfo(Buffer[BOOTP_OFFSET_SYSARCH], Client.hw_address, Client.ClientGuid, 0));
+						retval = Handle_NBP_Request(con, Buffer, retval, GetClientinfo(Buffer[BOOTP_OFFSET_SYSARCH], Client.hw_address, Client.ClientGuid, 0));
 					}
 				}
 			else

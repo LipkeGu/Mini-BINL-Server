@@ -182,7 +182,8 @@ unsigned char eop;
 unsigned char get_string(FILE *fd, char* dest, size_t size);
 
 int Handle_VendorInfo(char* VenString, int VenStrLen);
-
+int isValidDHCPType(int type);
+int setDHCPRespType(int found);
 struct sockaddr_in from;
 socklen_t fromlen;
 
