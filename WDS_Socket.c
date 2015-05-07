@@ -100,7 +100,6 @@ int WDS_Recv_bootp(int con)
 	char WDSNBP_INDICATOR[1] = { 0xfa };
 	ZeroOut(RESPData, sizeof(RESPData));
 	
-
 	while (load == 0)
 	{
 		fromlen = sizeof(from);
@@ -110,7 +109,6 @@ int WDS_Recv_bootp(int con)
 		if (retval > 0)
 		{
 			if (memcmp(DHCP_MAGIC_COOKIE, &Buffer[BOOTP_OFFSET_COOKIE], 4) == 0 && Buffer[BOOTP_OFFSET_BOOTPTYPE] == BOOTP_REQUEST)
-			{
 				if (isValidDHCPType(Buffer[242]) == 0)
 				{
 					memcpy(&Client.hw_address, &Buffer[BOOTP_OFFSET_MACADDR], Buffer[BOOTP_OFFSET_MACLEN]);
@@ -122,8 +120,8 @@ int WDS_Recv_bootp(int con)
 							retval = Handle_NBP_Request(con, Buffer, retval, \
 							GetClientinfo(Buffer[BOOTP_OFFSET_SYSARCH], Client.hw_address, Client.ClientGuid, Client.ActionDone));
 						else /* Look up Server Rules / Settings */
+						{
 							if (config.AllowUnknownClients == 0)
-							{
 								switch (GetClientRule(Client.hw_address, Client.ClientGuid))
 								{
 								case WDSBP_OPTVAL_ACTION_ABORT:
@@ -140,10 +138,8 @@ int WDS_Recv_bootp(int con)
 									break;
 								}
 
-								Client.ActionDone = 1;
-							}
-							else
-								Client.ActionDone = 1;
+							Client.ActionDone = 1;
+						}
 					else /* Prepare an initial Approval */
 					{
 						Client.Action = WDSBP_OPTVAL_ACTION_APPROVAL;
@@ -153,8 +149,6 @@ int WDS_Recv_bootp(int con)
 							GetClientinfo(Buffer[BOOTP_OFFSET_SYSARCH], Client.hw_address, Client.ClientGuid, 0));
 					}
 				}
-				
-			}
 			else
 			{
 				memcpy(&Packettype, Buffer, sizeof(Packettype));
