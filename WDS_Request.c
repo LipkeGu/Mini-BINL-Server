@@ -261,6 +261,9 @@ int Handle_NBP_Request(int con, char* Data, size_t Packetlen, int found)
 {
 	RESPsize = 0;
 
+	gethostname(Server.nbname, sizeof(Server.nbname));
+	config.ServerIP = IP2Bytes(hostname_to_ip(Server.nbname));
+
 	/* BOOTP Type */
 	char Bootreply[1] = { BOOTP_REPLY };
 	memcpy(&RESPData[RESPsize], Bootreply, sizeof(Bootreply));

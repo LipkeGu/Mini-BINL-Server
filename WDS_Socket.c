@@ -102,7 +102,6 @@ int WDS_Recv_bootp(int con)
 	while (load == 0)
 	{
 		fromlen = sizeof(from);
-
 		retval = recvfrom(con, Buffer, sizeof(Buffer), 0, (struct sockaddr *) &from, &fromlen);
 
 		if (retval > 0)
@@ -119,26 +118,10 @@ int WDS_Recv_bootp(int con)
 							retval = Handle_NBP_Request(con, Buffer, retval, \
 							GetClientinfo(Buffer[BOOTP_OFFSET_SYSARCH], Client.hw_address, Client.ClientGuid, Client.ActionDone));
 						else /* Look up Server Rules / Settings */
-						{
-							if (config.AllowUnknownClients == 0)
-								switch (GetClientRule(Client.hw_address, Client.ClientGuid))
-								{
-								case WDSBP_OPTVAL_ACTION_ABORT:
-									Client.Action = WDSBP_OPTVAL_ACTION_ABORT;
-									break;
-								case WDSBP_OPTVAL_ACTION_APPROVAL:
-									Client.Action = WDSBP_OPTVAL_ACTION_APPROVAL;
-									break;
-								case WDSBP_OPTVAL_ACTION_REFERRAL:
-									Client.Action = WDSBP_OPTVAL_ACTION_REFERRAL;
-									break;
-								default:
-									Client.Action = config.DefaultAction;
-									break;
-								}
-
-							Client.ActionDone = 1;
-						}
+							if (config.AllowUnknownClients == 0 && GetClientRule(Client.hw_address) == 0)
+								Client.ActionDone = 1;
+							else
+								Client.ActionDone = 0;
 					else /* Prepare an initial Approval */
 					{
 						Client.Action = WDSBP_OPTVAL_ACTION_APPROVAL;

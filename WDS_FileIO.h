@@ -20,7 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 int Exist(const char* Filename);
 int WriteClientInfo(const unsigned char* hwadr);
-int GetClientRule(const unsigned char* hwadr, const unsigned char* guid);
+int GetClientRule(const unsigned char* hwadr);
 int isMacEqual(unsigned char* MACa, unsigned char* MACb);
 int GetServerSettings();
 

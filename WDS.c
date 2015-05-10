@@ -26,7 +26,7 @@ void Set_Type(uint32_t NewType)
 	Set_Size(sizeof(NewType));
 }
 
-void ZeroOut(char* Buffer, size_t length)
+void ZeroOut(void* Buffer, size_t length)
 {
 #ifdef _WIN32
 	ZeroMemory(Buffer, length);

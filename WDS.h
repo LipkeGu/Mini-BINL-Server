@@ -195,7 +195,7 @@ void Set_EoP(unsigned char neweop);
 void Set_PKTLength();
 void print_values(int data_len, char* Data[]);
 void print_wdsnbp_options(unsigned char* wds_options);
-void ZeroOut(char* Buffer, size_t length);
+void ZeroOut(void* Buffer, size_t length);
 
 #define WDS_MSG_LOOKING_FOR_POLICY		"Server is looking for client policy..."
 #define WDS_MSG_FILE_NOT_FOUND			"A requested file for this client was not found on the server..."

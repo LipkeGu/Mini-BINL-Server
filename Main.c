@@ -37,7 +37,8 @@ int main(int argc, char* argv[])
 		config.ShowClientRequests = 1;
 		
 	}
-	
+	config.ShowClientRequests = 1;
+
 	Client.ActionDone = 0;
 	Client.Action = WDSBP_OPTVAL_ACTION_APPROVAL;
 
