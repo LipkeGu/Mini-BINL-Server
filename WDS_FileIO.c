@@ -119,7 +119,7 @@ int GetServerSettings()
 			fscanf(fil, "PollIntervall: %d\n", &config.PollIntervall);
 			fscanf(fil, "TFTPRetryCount: %d\n", &config.TFTPRetryCount);
 			fscanf(fil, "AllowUnknownClients: %d\n", &config.AllowUnknownClients);
-			fscanf(fil, "VersionQuery: %d\n", &config.AllowUnknownClients);
+			fscanf(fil, "VersionQuery: %d\n", &config.VersionQuery);
 			fscanf(fil, "ShowClientRequests: %d\n", &config.ShowClientRequests);
 			fscanf(fil, "DefaultAction: %d\n", &config.DefaultAction);
 			fscanf(fil, "DefaultMode: %d\n", &config.DefaultMode);
