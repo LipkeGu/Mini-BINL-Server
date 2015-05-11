@@ -36,7 +36,7 @@ int GetClientRule(const unsigned char* MACb)
 
 	int Action = 0;
 	int Mode = 0;
-	int i;
+	int i = 0;
 	int result = 0;
 	int found = 0;
 

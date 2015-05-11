@@ -33,7 +33,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <WinBase.h>
 #include <process.h>
 
-#define MSG_DONTWAIT		0
+#define MSG_DONTWAIT	0
 #ifndef DS
 #define DS			"\\" 
 #endif
@@ -127,18 +127,18 @@ struct server_config
 	uint32_t	ServerIP;
 	uint32_t	SubnetMask;
 	
-	char		server_root[255];
+	char	server_root[255];
 
-	int			NeedsApproval;
-	int			PollIntervall;
-	int			TFTPRetryCount;
-	int			VersionQuery;
-	int			AllowUnknownClients;
-	int			DefaultAction;
-	int			ShowClientRequests;
-	int			DefaultMode;
-	int			PXEClientPrompt;
-} config;
+	int		NeedsApproval;
+	int		PollIntervall;
+	int		TFTPRetryCount;
+	int		VersionQuery;
+	int		AllowUnknownClients;
+	int		DefaultAction;
+	int		ShowClientRequests;
+	int		DefaultMode;
+	int		PXEClientPrompt;
+} Config;
 
 struct Client_Info
 {
@@ -155,16 +155,15 @@ struct Client_Info
 	int Version;
 	int WDSMode;
 	int Handled;
-
 } Client;
 
 struct Server_Info
 {
-	char	dnsdomain[255];
-	char	nbname[64];
-	char	service[64];
+	char dnsdomain[255];
+	char nbname[64];
+	char service[64];
 
-	int		RequestID;
+	int	RequestID;
 } Server;
 
 uint32_t IP2Bytes(const char* IP_address);
@@ -184,6 +183,7 @@ unsigned char get_string(FILE *fd, char* dest, size_t size);
 int Handle_VendorInfo(char* VenString, int VenStrLen);
 int isValidDHCPType(int type);
 int setDHCPRespType(int found);
+
 struct sockaddr_in from;
 socklen_t fromlen;
 
@@ -202,12 +202,10 @@ void ZeroOut(void* Buffer, size_t length);
 #define WDS_MSG_CLIENT_IS_BANNED		"This Client is not allowed to connect"
 #define WDS_MSG_CLIENT_ACCEPTED			"Client accepted..."
 #define WDS_MSG_REQUEST_ABORTED			"Request aborted..."
-#define WDS_MSG_REFERRAL				"An more suitable Server will handle this request."
+#define WDS_MSG_REFERRAL				"Another Server will handle this request."
 
 #define WDS_MODE_RIS			0
 #define WDS_MODE_WDS			1
 #define WDS_MODE_UNK			2
 
 #endif /* WDS_H_ */
-
-
