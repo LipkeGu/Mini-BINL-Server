@@ -240,7 +240,7 @@ int GetClientinfo(int arch, unsigned char* hwadr, unsigned char* guid, int found
 	}
 	else
 	{
-		if (config.AllowUnknownClients == 0 && config.ShowClientRequests == 1)
+		if (Config.AllowUnknownClients == 0 && Config.ShowClientRequests == 1)
 		{
 			sprintf(logbuffer, "======== WDS (Request #%d) ========\n", Server.RequestID);
 			logger(logbuffer);
@@ -262,7 +262,7 @@ int Handle_NBP_Request(int con, char* Data, size_t Packetlen, int found)
 	RESPsize = 0;
 
 	gethostname(Server.nbname, sizeof(Server.nbname));
-	config.ServerIP = IP2Bytes(hostname_to_ip(Server.nbname));
+	Config.ServerIP = IP2Bytes(hostname_to_ip(Server.nbname));
 
 	/* BOOTP Type */
 	char Bootreply[1] = { BOOTP_REPLY };
@@ -302,8 +302,8 @@ int Handle_NBP_Request(int con, char* Data, size_t Packetlen, int found)
 	Set_Size(IPV4_ADDR_LENGTH);
 
 	/* Next Server-IP */
-	memcpy(&RESPData[RESPsize], &config.ServerIP, sizeof(config.ServerIP));
-	Set_Size(sizeof(config.ServerIP));
+	memcpy(&RESPData[RESPsize], &Config.ServerIP, sizeof(Config.ServerIP));
+	Set_Size(sizeof(Config.ServerIP));
 
 	/* Relay Agent-IP */
 	memcpy(&RESPData[RESPsize], &Data[BOOTP_OFFSET_RELAYIP], IPV4_ADDR_LENGTH);
@@ -339,8 +339,8 @@ int Handle_NBP_Request(int con, char* Data, size_t Packetlen, int found)
 	memcpy(&RESPData[RESPsize], netopt, sizeof(netopt));
 	Set_Size(sizeof(netopt));
 
-	memcpy(&RESPData[RESPsize], &config.SubnetMask, sizeof(config.SubnetMask));
-	Set_Size(sizeof(config.SubnetMask));
+	memcpy(&RESPData[RESPsize], &Config.SubnetMask, sizeof(Config.SubnetMask));
+	Set_Size(sizeof(Config.SubnetMask));
 
 	/* Option Router (3) */
 	char Rtropt[2] = { 0x03, IPV4_ADDR_LENGTH };
@@ -348,8 +348,8 @@ int Handle_NBP_Request(int con, char* Data, size_t Packetlen, int found)
 	memcpy(&RESPData[RESPsize], Rtropt, sizeof(Rtropt));
 	Set_Size(sizeof(Rtropt));
 
-	memcpy(&RESPData[RESPsize], &config.ServerIP, sizeof(config.ServerIP));
-	Set_Size(sizeof(config.ServerIP));
+	memcpy(&RESPData[RESPsize], &Config.ServerIP, sizeof(Config.ServerIP));
+	Set_Size(sizeof(Config.ServerIP));
 
 	/* DNS-Server (6) */
 	char DNSopt[2] = { 0x06, IPV4_ADDR_LENGTH };
@@ -357,8 +357,8 @@ int Handle_NBP_Request(int con, char* Data, size_t Packetlen, int found)
 	memcpy(&RESPData[RESPsize], DNSopt, sizeof(DNSopt));
 	Set_Size(sizeof(DNSopt));
 
-	memcpy(&RESPData[RESPsize], &config.ServerIP, sizeof(config.ServerIP));
-	Set_Size(sizeof(config.ServerIP));
+	memcpy(&RESPData[RESPsize], &Config.ServerIP, sizeof(Config.ServerIP));
+	Set_Size(sizeof(Config.ServerIP));
 
 	/* Option Netbios Name Server (44) */
 	char WINSopt[2] = { 0x2c, IPV4_ADDR_LENGTH };
@@ -366,8 +366,8 @@ int Handle_NBP_Request(int con, char* Data, size_t Packetlen, int found)
 	memcpy(&RESPData[RESPsize], WINSopt, sizeof(WINSopt));
 	Set_Size(sizeof(WINSopt));
 
-	memcpy(&RESPData[RESPsize], &config.ServerIP, sizeof(config.ServerIP));
-	Set_Size(sizeof(config.ServerIP));
+	memcpy(&RESPData[RESPsize], &Config.ServerIP, sizeof(Config.ServerIP));
+	Set_Size(sizeof(Config.ServerIP));
 
 	/* DHCP Response Type */
 	char DHCP_ACK[3] = { 0x35, 0x01, setDHCPRespType(found) };
@@ -381,8 +381,8 @@ int Handle_NBP_Request(int con, char* Data, size_t Packetlen, int found)
 	memcpy(&RESPData[RESPsize], idtopt, sizeof(idtopt));
 	Set_Size(sizeof(idtopt));
 
-	memcpy(&RESPData[RESPsize], &config.ServerIP, sizeof(config.ServerIP));
-	Set_Size(sizeof(config.ServerIP));
+	memcpy(&RESPData[RESPsize], &Config.ServerIP, sizeof(Config.ServerIP));
+	Set_Size(sizeof(Config.ServerIP));
 
 	/* DHCP-Option "Vendor-Class" (60) */
 	memcpy(&RESPData[RESPsize], &Data[BOOTP_OFFSET_VENOPTION], 2);
@@ -440,17 +440,17 @@ int Handle_NBP_Request(int con, char* Data, size_t Packetlen, int found)
 		if (Client.ActionDone == 0)
 			Client.Action = WDSBP_OPTVAL_ACTION_APPROVAL;
 
-		if (config.AllowUnknownClients == 0)
+		if (Config.AllowUnknownClients == 0)
 		{
 			char aprovalmsg[29] = {
 				WDSBP_OPT_NEXT_ACTION, 0x01, Client.Action,
 				WDSBP_OPT_REQUEST_ID, 0x04, 0x00, 0x00, 0x00, Server.RequestID,
-				WDSBP_OPT_POLL_INTERVAL, 0x02, 0x00, config.PollIntervall,
-				WDSBP_OPT_POLL_RETRY_COUNT, 0x02, 0x00, config.TFTPRetryCount,
+				WDSBP_OPT_POLL_INTERVAL, 0x02, 0x00, Config.PollIntervall,
+				WDSBP_OPT_POLL_RETRY_COUNT, 0x02, 0x00, Config.TFTPRetryCount,
 				WDSBP_OPT_ACTION_DONE, 0x01, Client.ActionDone,
-				WDSBP_OPT_VERSION_QUERY, 0x01, config.VersionQuery,
-				WDSBP_OPT_PXE_CLIENT_PROMPT, 0x01, config.PXEClientPrompt, 
-				WDSBP_OPT_PXE_PROMPT_DONE, 0x01, config.PXEClientPrompt };
+				WDSBP_OPT_VERSION_QUERY, 0x01, Config.VersionQuery,
+				WDSBP_OPT_PXE_CLIENT_PROMPT, 0x01, Config.PXEClientPrompt, 
+				WDSBP_OPT_PXE_PROMPT_DONE, 0x01, Config.PXEClientPrompt };
 
 			char admopt[2] = { 0xfa, sizeof(aprovalmsg) };
 

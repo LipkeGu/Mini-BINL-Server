@@ -20,37 +20,37 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 int main(int argc, char* argv[])
 {
-	config.BOOTPPort = WDS_LISTEN_PORT;
-	config.TFTPPort = 69;
-	config.DefaultAction = WDSBP_OPTVAL_ACTION_ABORT;
+	Config.BOOTPPort = WDS_LISTEN_PORT;
+	Config.TFTPPort = 69;
+	Config.DefaultAction = WDSBP_OPTVAL_ACTION_ABORT;
 	sprintf(Server.dnsdomain, "%s", WDS_DEFUALT_DOMAIN);
-	config.PXEClientPrompt = WDSBP_OPTVAL_PXE_PROMPT_OPTOUT;
+	Config.PXEClientPrompt = WDSBP_OPTVAL_PXE_PROMPT_OPTOUT;
 
 	if (GetServerSettings() == 1)
 	{
 		Server.RequestID = 7;
-		config.AllowUnknownClients = 0;
-		config.DefaultMode = WDS_MODE_WDS;
-		config.VersionQuery = 0;
-		config.PollIntervall = 2;
-		config.TFTPRetryCount = 5;
-		config.ShowClientRequests = 1;
+		Config.AllowUnknownClients = 0;
+		Config.DefaultMode = WDS_MODE_WDS;
+		Config.VersionQuery = 0;
+		Config.PollIntervall = 2;
+		Config.TFTPRetryCount = 5;
+		Config.ShowClientRequests = 1;
 		
 	}
-	config.ShowClientRequests = 1;
+	Config.ShowClientRequests = 1;
 
 	Client.ActionDone = 0;
 	Client.Action = WDSBP_OPTVAL_ACTION_APPROVAL;
 
-	if (config.AllowUnknownClients == 1)
-		config.NeedsApproval = 0;
+	if (Config.AllowUnknownClients == 1)
+		Config.NeedsApproval = 0;
 	else
-		config.NeedsApproval = 1;
+		Config.NeedsApproval = 1;
 
 #ifdef _WIN32
-	sprintf(config.server_root, "%s", replace_str("D:#reminst", "#", DS));
+	sprintf(Config.server_root, "%s", replace_str("D:#reminst", "#", DS));
 #else
-	sprintf(config.server_root, "%s", replace_str("#mnt#reminst", "#", DS));
+	sprintf(Config.server_root, "%s", replace_str("#mnt#reminst", "#", DS));
 #endif
 	handle_args(argc, argv);
 

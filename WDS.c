@@ -83,7 +83,7 @@ void handle_args(int data_len, char* Data[])
 		for (i = 0; i < data_len; i++)
 		{
 			if (memcmp(Data[i], "-datadir", 9) == 0) /* root Directory */
-				sprintf(config.server_root, "%s", Data[(i + 1)]);
+				sprintf(Config.server_root, "%s", Data[(i + 1)]);
 		}
 }
 

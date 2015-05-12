@@ -76,7 +76,7 @@ int GetClientRule(const unsigned char* MACb)
 			Client.WDSMode = WDS_MODE_UNK;
 			break;
 		default:
-			Client.WDSMode = config.DefaultMode;
+			Client.WDSMode = Config.DefaultMode;
 			break;
 		}
 
@@ -92,7 +92,7 @@ int GetClientRule(const unsigned char* MACb)
 			Client.Action = WDSBP_OPTVAL_ACTION_ABORT;
 			break;
 		default:
-			Client.WDSMode = config.DefaultAction;
+			Client.WDSMode = Config.DefaultAction;
 			break;
 		}
 
@@ -100,8 +100,8 @@ int GetClientRule(const unsigned char* MACb)
 	}
 	else
 	{
-		Client.Action = config.DefaultAction;
-		Client.WDSMode = config.DefaultMode;
+		Client.Action = Config.DefaultAction;
+		Client.WDSMode = Config.DefaultMode;
 	
 		return 1;
 	}
@@ -116,13 +116,13 @@ int GetServerSettings()
 		while (!feof(fil))
 		{
 			fscanf(fil, "CurrentIDs: %d\n", &Server.RequestID);
-			fscanf(fil, "PollIntervall: %d\n", &config.PollIntervall);
-			fscanf(fil, "TFTPRetryCount: %d\n", &config.TFTPRetryCount);
-			fscanf(fil, "AllowUnknownClients: %d\n", &config.AllowUnknownClients);
-			fscanf(fil, "VersionQuery: %d\n", &config.VersionQuery);
-			fscanf(fil, "ShowClientRequests: %d\n", &config.ShowClientRequests);
-			fscanf(fil, "DefaultAction: %d\n", &config.DefaultAction);
-			fscanf(fil, "DefaultMode: %d\n", &config.DefaultMode);
+			fscanf(fil, "PollIntervall: %d\n", &Config.PollIntervall);
+			fscanf(fil, "TFTPRetryCount: %d\n", &Config.TFTPRetryCount);
+			fscanf(fil, "AllowUnknownClients: %d\n", &Config.AllowUnknownClients);
+			fscanf(fil, "VersionQuery: %d\n", &Config.VersionQuery);
+			fscanf(fil, "ShowClientRequests: %d\n", &Config.ShowClientRequests);
+			fscanf(fil, "DefaultAction: %d\n", &Config.DefaultAction);
+			fscanf(fil, "DefaultMode: %d\n", &Config.DefaultMode);
 		}
 
 		if (fclose(fil) == 0)

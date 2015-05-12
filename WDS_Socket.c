@@ -56,8 +56,8 @@ int CreateSocketAndBind(uint16_t port)
 		else
 		{
 			getnameinfo((struct sockaddr *)&serv_addr, sizeof(serv_addr), Server.nbname, sizeof(Server.nbname), NULL, 0, 0);
-			config.ServerIP = IP2Bytes(hostname_to_ip(Server.nbname));
-			config.SubnetMask = IP2Bytes("255.255.255.0");
+			Config.ServerIP = IP2Bytes(hostname_to_ip(Server.nbname));
+			Config.SubnetMask = IP2Bytes("255.255.255.0");
 		}
 	}
 
@@ -68,7 +68,7 @@ int bootp_start()
 {
 	int m_socket = SOCKET_ERROR; 
 	
-	m_socket = CreateSocketAndBind(config.BOOTPPort);
+	m_socket = CreateSocketAndBind(Config.BOOTPPort);
 	
 	if (m_socket != SOCKET_ERROR)
 		return WDS_Recv_bootp(m_socket);
@@ -118,7 +118,7 @@ int WDS_Recv_bootp(int con)
 							retval = Handle_NBP_Request(con, Buffer, retval, \
 							GetClientinfo(Buffer[BOOTP_OFFSET_SYSARCH], Client.hw_address, Client.ClientGuid, Client.ActionDone));
 						else /* Look up Server Rules / Settings */
-							if (config.AllowUnknownClients == 0 && GetClientRule(Client.hw_address) == 0)
+							if (Config.AllowUnknownClients == 0 && GetClientRule(Client.hw_address) == 0)
 								Client.ActionDone = 1;
 							else
 								Client.ActionDone = 0;
