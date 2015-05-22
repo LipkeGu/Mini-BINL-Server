@@ -26,8 +26,10 @@ int startWinsock(void)
 }
 #endif
 
-int CreateSocketAndBind(uint16_t port)
+int CreateUnicastSocketAndBind(uint16_t port, in_addr_t in_addr)
 {
+	int enabled = 1;
+
 #ifdef _WIN32
 	long rc;
 	rc = startWinsock();
@@ -37,27 +39,62 @@ int CreateSocketAndBind(uint16_t port)
 
 #endif
 	int sockfd = SOCKET_ERROR;
-	struct sockaddr_in serv_addr;
-
 	sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
 	if (sockfd == -1)
 		return -1;
 	else
 	{
-		ZeroOut((char*)&serv_addr, sizeof(serv_addr));
-
-		serv_addr.sin_family = AF_INET;
-		serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-		serv_addr.sin_port = htons(port);
-
-		if (bind(sockfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0)
-			sockfd = -1;
-		else
+		ZeroOut((char*)&Userv_addr, sizeof(Userv_addr));
+		if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &enabled, sizeof enabled) == 0 &&
+			setsockopt(sockfd, SOL_SOCKET, SO_BROADCAST, &enabled, sizeof enabled) == 0)
 		{
-			getnameinfo((struct sockaddr *)&serv_addr, sizeof(serv_addr), Server.nbname, sizeof(Server.nbname), NULL, 0, 0);
-			Config.ServerIP = IP2Bytes(hostname_to_ip(Server.nbname));
-			Config.SubnetMask = IP2Bytes("255.255.255.0");
+
+			memset(&Userv_addr, 0, sizeof(Userv_addr));
+			Userv_addr.sin_family = AF_INET;
+			Userv_addr.sin_addr.s_addr = htonl(in_addr);
+			Userv_addr.sin_port = htons(4011);
+
+			if (bind(sockfd, (struct sockaddr*)&Userv_addr, sizeof(Userv_addr)) < 0)
+			{
+				sockfd = -1;
+				printf("Cant open unicast socket...\n");
+			}
+		}
+	}
+
+	return sockfd;
+}
+
+int CreateBroadCastSocketAndBind(uint16_t port, in_addr_t in_addr)
+{
+	int enabled = 1;
+	struct hostent *he;
+	int sockfd = SOCKET_ERROR;
+
+	ZeroOut((char*)&Bserv_addr, sizeof(Bserv_addr));
+
+	sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+
+	if (sockfd == -1)
+		return -1;
+	else
+	{
+
+		if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &enabled, sizeof enabled) == 0 &&
+				setsockopt(sockfd, SOL_SOCKET, SO_BROADCAST, &enabled, sizeof enabled) == 0)
+		{
+			memset(&Bserv_addr, 0, sizeof(Bserv_addr));
+
+			Bserv_addr.sin_family = AF_INET;
+			Bserv_addr.sin_addr.s_addr = INADDR_ANY;
+			Bserv_addr.sin_port = htons(67);
+
+			if (bind(sockfd, (struct sockaddr*)&Bserv_addr, sizeof(Bserv_addr)) < 0)
+			{
+				sockfd = -1;
+				Config.DHCPReqDetection = 0;
+			}
 		}
 	}
 
@@ -66,26 +103,65 @@ int CreateSocketAndBind(uint16_t port)
 
 int bootp_start()
 {
-	int m_socket = SOCKET_ERROR; 
-	
-	m_socket = CreateSocketAndBind(Config.BOOTPPort);
-	
-	if (m_socket != SOCKET_ERROR)
-		return WDS_Recv_bootp(m_socket);
-	else
-		return m_socket;
+	int bootp_socket = SOCKET_ERROR;
+	int dhcp_socket = SOCKET_ERROR;
+
+	gethostname(Server.nbname, sizeof(Server.nbname));
+	Config.ServerIP = IP2Bytes(hostname_to_ip(Server.nbname));
+	Config.SubnetMask = IP2Bytes("255.255.255.0");
+
+	pid_t pid = fork();
+
+	if (pid > 0)
+	{
+		bootp_socket = CreateUnicastSocketAndBind(Config.BOOTPPort, INADDR_ANY);
+
+		if (bootp_socket != SOCKET_ERROR)
+			return WDS_Recv_bootp(bootp_socket);
+		else
+			return bootp_socket;
+	}
+	else if (pid == 0)
+	{
+		dhcp_socket = CreateBroadCastSocketAndBind(Config.DHCPPort, INADDR_BROADCAST);
+
+		if (dhcp_socket != SOCKET_ERROR)
+			return WDS_Recv_DHCP(dhcp_socket);
+		else
+			return dhcp_socket;
+	}
+	return 1;
 }
 
-int tftp_start()
+int WDS_Recv_DHCP(int con)
 {
-	int m_socket = SOCKET_ERROR;
+	char Buffer[1024];
+	int load = 0;
+	int retval = 0;
 
-	m_socket = CreateSocketAndBind(69);
+	uint32_t Packettype = 0;
+	char DHCP_MAGIC_COOKIE[4] = { 0x63, 0x82, 0x53, 0x63 };
 
-	if (m_socket != SOCKET_ERROR)
-		return WDS_Recv_bootp(m_socket);
-	else
-		return m_socket;
+	ZeroOut(RESPData, sizeof(RESPData));
+
+	while (load == 0)
+	{
+		bfromlen = sizeof(bfrom);
+		retval = recvfrom(con, Buffer, sizeof(Buffer), 0, (struct sockaddr *) &bfrom, &bfromlen);
+
+		if (retval > 0)
+		{
+			if (Buffer[242] == 1)
+			{
+				Client.inDHCPMode = 1;
+				retval = Handle_DHCP_Request(con, Buffer, retval, 0);
+			}
+
+			ZeroOut(RESPData, sizeof(RESPData));
+		}
+	}
+
+	return 0;
 }
 
 int WDS_Recv_bootp(int con)
@@ -93,12 +169,13 @@ int WDS_Recv_bootp(int con)
 	char Buffer[1024];
 	int load = 0;
 	int retval = 0;
-	int found = 0;
+
 	uint32_t Packettype = 0;
 	char DHCP_MAGIC_COOKIE[4] = { 0x63, 0x82, 0x53, 0x63 };
 	char WDSNBP_INDICATOR[1] = { 0xfa };
+
 	ZeroOut(RESPData, sizeof(RESPData));
-	
+
 	while (load == 0)
 	{
 		fromlen = sizeof(from);
@@ -106,30 +183,41 @@ int WDS_Recv_bootp(int con)
 
 		if (retval > 0)
 		{
-			if (memcmp(DHCP_MAGIC_COOKIE, &Buffer[BOOTP_OFFSET_COOKIE], 4) == 0 && Buffer[BOOTP_OFFSET_BOOTPTYPE] == BOOTP_REQUEST)
+			if (memcmp(DHCP_MAGIC_COOKIE, &Buffer[BOOTP_OFFSET_COOKIE], 4) == 0)
+			{
+				Client.inDHCPMode = 0;
+
 				if (isValidDHCPType(Buffer[242]) == 0)
 				{
-					memcpy(&Client.hw_address, &Buffer[BOOTP_OFFSET_MACADDR], Buffer[BOOTP_OFFSET_MACLEN]);
-					memcpy(&Client.ClientGuid, &Buffer[(BOOTP_OFFSET_GUID + 3)], Buffer[(BOOTP_OFFSET_GUID + 1)]);
-					memcpy(&Client.ClientArch, &Buffer[(BOOTP_OFFSET_CARCH + 2)], Buffer[(BOOTP_OFFSET_CARCH + 1)]);
+					if (Buffer[291] == 55 && Buffer[292] == 11)
+						Client.isWDSRequest = 1;
+					else
+						Client.isWDSRequest = 0;
 
-					if (retval > DHCP_MINIMAL_PACKET_SIZE && memcmp(WDSNBP_INDICATOR, &Buffer[BOOTP_OFFSET_WDSNBP], 1) == 0)
-						if (Client.ActionDone == 1)	/* Server is done */
-							retval = Handle_NBP_Request(con, Buffer, retval, \
-							GetClientinfo(Buffer[BOOTP_OFFSET_SYSARCH], Client.hw_address, Client.ClientGuid, Client.ActionDone));
-						else /* Look up Server Rules / Settings */
-							if (Config.AllowUnknownClients == 0 && GetClientRule(Client.hw_address) == 0)
-								Client.ActionDone = 1;
+					if (Client.isWDSRequest == 1)
+					{
+							memcpy(&Client.hw_address, &Buffer[BOOTP_OFFSET_MACADDR], Buffer[BOOTP_OFFSET_MACLEN]);
+							memcpy(&Client.ClientGuid, &Buffer[(BOOTP_OFFSET_GUID + 3)], Buffer[(BOOTP_OFFSET_GUID + 1)]);
+							memcpy(&Client.ClientArch, &Buffer[(BOOTP_OFFSET_CARCH + 2)], Buffer[(BOOTP_OFFSET_CARCH + 1)]);
+
+							if (Client.ActionDone == 1)
+								retval = Handle_NBP_Request(con, Buffer, retval, GetClientinfo(Buffer[BOOTP_OFFSET_SYSARCH], Client.hw_address, Client.ClientGuid, Client.ActionDone));
 							else
-								Client.ActionDone = 0;
-					else /* Prepare an initial Approval */
+								if (Config.AllowUnknownClients == 0 && GetClientRule(Client.hw_address) == 0)
+									Client.ActionDone = 1;
+								else
+									Client.Action = WDSBP_OPTVAL_ACTION_ABORT;
+									Client.ActionDone = 1;
+					}
+					else
 					{
 						Client.Action = WDSBP_OPTVAL_ACTION_APPROVAL;
 						Client.ActionDone = 0;
 
-						retval = Handle_NBP_Request(con, Buffer, retval, GetClientinfo(Buffer[BOOTP_OFFSET_SYSARCH], Client.hw_address, Client.ClientGuid, 0));
+						retval = Handle_NBP_Request(con, Buffer, retval, 0);
 					}
 				}
+			}
 			else
 			{
 				memcpy(&Packettype, Buffer, sizeof(Packettype));
@@ -143,15 +231,24 @@ int WDS_Recv_bootp(int con)
 					break;
 				}
 			}
-			
+
 			ZeroOut(RESPData, sizeof(RESPData));
 		}
 	}
-	
+
 	return 0;
 }
 
 int WDS_Send(int con, char* data, size_t length)
 {
 	return sendto(con, data, length, 0, (struct sockaddr *) &from, sizeof(from));
+}
+
+int DHCP_Send(int con, char* data, size_t length)
+{
+	int send_length = 0;
+	bfrom.sin_addr .s_addr = inet_addr("255.255.255.255");
+	send_length = sendto(con, data, length, 0, (struct sockaddr*)&bfrom, sizeof(bfrom));
+
+	return 0;
 }

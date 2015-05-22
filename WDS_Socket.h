@@ -15,8 +15,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "WDS.h"
 
-
-
 #ifndef WDS_SOCKET_H_
 #define WDS_SOCKET_H_
 #define WDS_LISTEN_PORT		4011
@@ -30,9 +28,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define SYSARCH_INTEL_X64		6
 #define SYSARCH_INTEL_EFI		7
 
-int WDS_Recv_bootp(int con);
+int BCSockfd;
+int UCSockfd;
 
-int CreateSocketAndBind(uint16_t port);
+struct sockaddr_in Bserv_addr;
+struct sockaddr_in Userv_addr;
+
+int WDS_Recv_bootp(int con);
+int WDS_Recv_DHCP(int con);
+
+int CreateBroadCastSocketAndBind(uint16_t port, in_addr_t in_addr);
+int DHCP_Send(int con, char* buf, size_t len);
+int CreateUnicastSocketAndBind(uint16_t port, in_addr_t in_addr);
 int bootp_start();
 int WDS_Send(int con, char* buf, size_t len);
 int startWinsock(void);

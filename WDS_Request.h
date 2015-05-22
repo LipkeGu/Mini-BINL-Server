@@ -55,6 +55,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // Bootfiles
 //
 
+#define DHCP_BOOTFILE			"wdsnbp.0"
 #define WDS_BOOTFILE_X86		"\\Boot\\x86\\pxeboot.n12"
 #define WDS_BOOTFILE_X64		"\\Boot\\x64\\pxeboot.n12"
 #define WDS_BOOTFILE_EFI		"\\Boot\\EFI\\bootmgfw.efi"
@@ -93,24 +94,25 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define WDSBP_OPTVAL_NBP_VER_7				0x0700
 #define WDSBP_OPTVAL_NBP_VER_8				0x0800
 
-#define BOOTP_OFFSET_BOOTPTYPE				0
-#define BOOTP_OFFSET_HWTYPE				1
-#define BOOTP_OFFSET_MACLEN				2
-#define BOOTP_OFFSET_HOPS					3
-#define	BOOTP_OFFSET_TRANSID				4
+#define BOOTP_OFFSET_BOOTPTYPE			0
+#define BOOTP_OFFSET_HWTYPE					1
+#define BOOTP_OFFSET_MACLEN					2
+#define BOOTP_OFFSET_HOPS						3
+#define BOOTP_OFFSET_TRANSID				4
 #define BOOTP_OFFSET_SECONDS				8
-#define	BOOTP_OFFSET_BOOTPFLAGS			10	
-#define BOOTP_OFFSET_YOURIP				12
+#define BOOTP_OFFSET_BOOTPFLAGS			10
+#define BOOTP_OFFSET_YOURIP					12
 #define BOOTP_OFFSET_CLIENTIP				16
-#define	BOOTP_OFFSET_RELAYIP				24
+#define BOOTP_OFFSET_NEXTSERVER			20
+#define BOOTP_OFFSET_RELAYIP					24
 #define BOOTP_OFFSET_MACADDR				28
 #define BOOTP_OFFSET_MACPADDING			34
 
-#define BOOTP_OFFSET_COOKIE				236
-#define BOOTP_OFFSET_VENOPTION				243
-#define BOOTP_OFFSET_GUID					254
+#define BOOTP_OFFSET_COOKIE					236
+#define BOOTP_OFFSET_VENOPTION			245
+#define BOOTP_OFFSET_GUID						254
 #define BOOTP_OFFSET_CARCH					273
-#define BOOTP_OFFSET_WDSNBP					277
+#define BOOTP_OFFSET_WDSNBP				277
 #define BOOTP_OFFSET_OPTIONS				279		/* WDSNBP */
 #define BOOTP_OFFSET_SYSARCH				289		/* WDSNBP */
 
@@ -120,5 +122,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 int GetPacketType(int con, char* Data, size_t Datalen);
 int Handle_NBP_Request(int con, char* Data, size_t Packetlen, int found);
+int Handle_DHCP_Request(int con, char* Data, size_t Packetlen, int found);
 int GetClientinfo(int arch, unsigned char* hwadr, unsigned char* guid, int found);
 #endif

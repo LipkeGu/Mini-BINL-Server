@@ -46,9 +46,10 @@ int GetClientRule(const unsigned char* MACb)
 
 	if (fil == NULL)
 		return 1;
-	
+
 	while (!feof(fil) && found == 0)
-		if (fscanf(fil, "%X-%X-%X-%X-%X-%X | %d | %d\n", &MACa[0], &MACa[1], &MACa[2], &MACa[3], &MACa[4], &MACa[5], &Action, &Mode) > 3)
+		if (fscanf(fil, "%X-%X-%X-%X-%X-%X | %d | %d\n",
+				&MACa[0], &MACa[1], &MACa[2], &MACa[3], &MACa[4], &MACa[5], &Action, &Mode) > 3)
 		{
 			for (i = 0; i < 6; i++)
 				mac[i] = (unsigned char)MACa[i];
@@ -102,7 +103,7 @@ int GetClientRule(const unsigned char* MACb)
 	{
 		Client.Action = Config.DefaultAction;
 		Client.WDSMode = Config.DefaultMode;
-	
+
 		return 1;
 	}
 }

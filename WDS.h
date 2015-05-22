@@ -35,7 +35,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #define MSG_DONTWAIT	0
 #ifndef DS
-#define DS			"\\" 
+#define DS			"\\"
 #endif
 
 int startWinsock(void);
@@ -60,7 +60,9 @@ static __inline void eol(FILE *fd);
 #define closesocket			close
 
 #ifndef DS
-#define DS			"/" 
+#define DS			"/"
+
+#define HAVEFORKSUPPORT
 #endif
 
 static inline void skipspaces(FILE *fd);
@@ -71,6 +73,7 @@ static inline void eol(FILE *fd);
 #define WDS_H_
 
 #include "WDS_Socket.h"
+#include "WDS_TFTP.h"
 #include "WDS_Request.h"
 #include "WDS_FileIO.h"
 #include "WDS_RIS.h"
@@ -78,15 +81,15 @@ static inline void eol(FILE *fd);
 // #define	ALLOWALLARCHES		1
 
 #ifndef WDS_DEFUALT_DOMAIN
-#define WDS_DEFUALT_DOMAIN		"localdomain.local" 
+#define WDS_DEFUALT_DOMAIN		"localdomain.local"
 #endif
 
 #ifndef WDS_SETTINGS_FILE
-#define WDS_SETTINGS_FILE		"Settings.txt" 
+#define WDS_SETTINGS_FILE		"Settings.txt"
 #endif
 
 #ifndef WDS_CLIENTS_FILE
-#define WDS_CLIENTS_FILE		"Clients.txt" 
+#define WDS_CLIENTS_FILE		"Clients.txt"
 #endif
 
 #ifndef __LITTLE_ENDIAN
@@ -123,10 +126,10 @@ struct server_config
 {
 	uint16_t	BOOTPPort;
 	uint16_t	TFTPPort;
-
+	uint16_t	DHCPPort;
 	uint32_t	ServerIP;
 	uint32_t	SubnetMask;
-	
+
 	char	server_root[255];
 
 	int		NeedsApproval;
@@ -138,6 +141,7 @@ struct server_config
 	int		ShowClientRequests;
 	int		DefaultMode;
 	int		PXEClientPrompt;
+	int		DHCPReqDetection;
 } Config;
 
 struct Client_Info
@@ -150,11 +154,14 @@ struct Client_Info
 	char BCDPath[64];
 
 	int ClientArch;
-	int	ActionDone;
-	int	Action;
+	int ActionDone;
+	int Action;
 	int Version;
 	int WDSMode;
 	int Handled;
+	int inDHCPMode;
+	int lastDHCPType;
+	int isWDSRequest;
 } Client;
 
 struct Server_Info
@@ -162,19 +169,18 @@ struct Server_Info
 	char dnsdomain[255];
 	char nbname[64];
 	char service[64];
-
+	
 	int	RequestID;
 } Server;
 
 uint32_t IP2Bytes(const char* IP_address);
 uint32_t RESPtype;
-uint32_t IP2Bytes(const char* IP_address);
 
 size_t RESPsize;
 size_t ascii_to_utf16le(const char* src, char* dest, size_t offset);
 
 char RESPData[4096], logbuffer[1024];
-char* replace_str(const char* str, const char* old, const char* new);
+char* replace_str(const char* str, const char* old, const char* newchar);
 const char* hostname_to_ip(const char* hostname);
 
 unsigned char eop;
@@ -187,6 +193,9 @@ int setDHCPRespType(int found);
 struct sockaddr_in from;
 socklen_t fromlen;
 
+struct sockaddr_in bfrom;
+socklen_t bfromlen;
+
 void handle_args(int data_len, char* Data[]);
 void logger(char* text);
 void Set_Type(uint32_t NewType);
@@ -196,15 +205,16 @@ void Set_PKTLength();
 void print_values(int data_len, char* Data[]);
 void print_wdsnbp_options(unsigned char* wds_options);
 void ZeroOut(void* Buffer, size_t length);
+int isZeroIP(char* IP);
 
-#define WDS_MSG_LOOKING_FOR_POLICY		"Server is looking for client policy..."
+#define WDS_MSG_LOOKING_FOR_POLICY	"Server is looking for client policy..."
 #define WDS_MSG_FILE_NOT_FOUND			"A requested file for this client was not found on the server..."
 #define WDS_MSG_CLIENT_IS_BANNED		"This Client is not allowed to connect"
 #define WDS_MSG_CLIENT_ACCEPTED			"Client accepted..."
-#define WDS_MSG_REQUEST_ABORTED			"Request aborted..."
-#define WDS_MSG_REFERRAL				"Another Server will handle this request."
+#define WDS_MSG_REQUEST_ABORTED		"Request aborted..."
+#define WDS_MSG_REFERRAL						"Another Server will handle this request."
 
-#define WDS_MODE_RIS			0
+#define WDS_MODE_RIS				0
 #define WDS_MODE_WDS			1
 #define WDS_MODE_UNK			2
 

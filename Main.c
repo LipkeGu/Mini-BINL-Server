@@ -20,8 +20,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 int main(int argc, char* argv[])
 {
-	Config.BOOTPPort = WDS_LISTEN_PORT;
+	Config.BOOTPPort = 4011;
 	Config.TFTPPort = 69;
+	Config.DHCPPort = 67;
+
 	Config.DefaultAction = WDSBP_OPTVAL_ACTION_ABORT;
 	sprintf(Server.dnsdomain, "%s", WDS_DEFUALT_DOMAIN);
 	Config.PXEClientPrompt = WDSBP_OPTVAL_PXE_PROMPT_OPTOUT;
@@ -35,12 +37,13 @@ int main(int argc, char* argv[])
 		Config.PollIntervall = 2;
 		Config.TFTPRetryCount = 5;
 		Config.ShowClientRequests = 1;
-		
-	}
-	Config.ShowClientRequests = 1;
+		Config.DHCPReqDetection = 1;
+		Config.ShowClientRequests = 1;
 
-	Client.ActionDone = 0;
-	Client.Action = WDSBP_OPTVAL_ACTION_APPROVAL;
+	}
+		Client.ActionDone = 0;
+		Client.Action = WDSBP_OPTVAL_ACTION_APPROVAL;
+		Client.inDHCPMode = 1;
 
 	if (Config.AllowUnknownClients == 1)
 		Config.NeedsApproval = 0;
@@ -51,9 +54,19 @@ int main(int argc, char* argv[])
 	sprintf(Config.server_root, "%s", replace_str("D:#reminst", "#", DS));
 #else
 	sprintf(Config.server_root, "%s", replace_str("#mnt#reminst", "#", DS));
+
 #endif
 	handle_args(argc, argv);
 
+pid_t mainpid = fork();
+
+if (mainpid == 0)
+{
+	setsid();
 	bootp_start();
-	return 0;
+}
+else
+	exit(0);
+
+return 0;
 }

@@ -57,7 +57,7 @@ void logger(char* text)
 	char* fn_log = NULL;
 
 #ifdef _WIN32
-	printf(text);
+	printf("%s\n", text);
 #else
 	openlog("WDSServer", LOG_CONS | LOG_PID, LOG_USER);
 	syslog(LOG_INFO, "%s", text);
@@ -87,18 +87,18 @@ void handle_args(int data_len, char* Data[])
 		}
 }
 
-char* replace_str(const char* str, const char* old, const char* new)
+char* replace_str(const char* str, const char* old, const char* newchar)
 {
 	char* ret, *r;
 	const char* p, *q;
 
-	if (new == NULL || str == NULL || old == NULL)
+	if (newchar == NULL || str == NULL || old == NULL)
 		return "\0";
 
-	if (strlen(str) >= 1 && strlen(new) >= 1 && strlen(old) >= 1)
+	if (strlen(str) >= 1 && strlen(newchar) >= 1 && strlen(old) >= 1)
 	{
 		size_t oldlen = strlen(old);
-		size_t count = 0, retlen = 0, newlen = strlen(new);
+		size_t count = 0, retlen = 0, newlen = strlen(newchar);
 
 		if (oldlen != newlen)
 		{
@@ -120,7 +120,7 @@ char* replace_str(const char* str, const char* old, const char* new)
 			ptrdiff_t l = q - p;
 			memcpy(r, p, l);
 			r += l;
-			memcpy(r, new, newlen);
+			memcpy(r, newchar, newlen);
 			r += newlen;
 		}
 
@@ -192,42 +192,67 @@ uint32_t IP2Bytes(const char* IP_address)
 
 int setDHCPRespType(int found)
 {
-	if (found == 1)
+	if (Client.lastDHCPType == 3)
+	{
 		return DHCPACK;
+	}
 	else
 		return DHCPOFFER;
 }
 
+int isZeroIP(char* IP)
+{
+	char ZeroIP[4] = { 0x00, 0x00, 0x00, 0x00 };
+
+	if (memcmp(IP, ZeroIP, 4) == 0)
+		return 0;
+	else
+		return 1;
+}
+
 int isValidDHCPType(int type)
 {
+	int result = 1;
+
 	switch (type)
 	{
 	case DHCPDISCOVER:
-		return 0;
+		result = 0;
+		Client.lastDHCPType = 1;
 		break;
 	case DHCPOFFER:
-		return 1;
+		result = 1;
+		Client.lastDHCPType = 2;
 		break;
 	case DHCPREQUEST:
-		return 0;
+		result = 0;
+		Client.lastDHCPType = 3;
 		break;
 	case DHCPDECLINE:
-		return 1;
+		result = 1;
+		Client.lastDHCPType = 4;
 		break;
 	case DHCPACK:
-		return 1;
+		result = 1;
+		Client.lastDHCPType = 5;
 		break;
 	case DHCPNAK:
-		return 1;
+		result = 1;
+		Client.lastDHCPType = 6;
 		break;
 	case DHCPRELEASE:
-		return 1;
+		result = 1;
+		Client.lastDHCPType = 7;
 		break;
 	case DHCPINFORM:
-		return 1;
+		result = 1;
+		Client.lastDHCPType = 8;
 		break;
 	default:
-		return 1;
+		result = 1;
+		Client.lastDHCPType = 1;
 		break;
 	}
+
+	return result;
 }
