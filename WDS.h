@@ -73,7 +73,6 @@ static inline void eol(FILE *fd);
 #define WDS_H_
 
 #include "WDS_Socket.h"
-#include "WDS_TFTP.h"
 #include "WDS_Request.h"
 #include "WDS_FileIO.h"
 #include "WDS_RIS.h"
@@ -207,14 +206,14 @@ void print_wdsnbp_options(unsigned char* wds_options);
 void ZeroOut(void* Buffer, size_t length);
 int isZeroIP(char* IP);
 
-#define WDS_MSG_LOOKING_FOR_POLICY	"Server is looking for client policy..."
+#define WDS_MSG_LOOKING_FOR_POLICY		"Server is looking for client policy..."
 #define WDS_MSG_FILE_NOT_FOUND			"A requested file for this client was not found on the server..."
 #define WDS_MSG_CLIENT_IS_BANNED		"This Client is not allowed to connect"
-#define WDS_MSG_CLIENT_ACCEPTED			"Client accepted..."
+#define WDS_MSG_CLIENT_ACCEPTED		"Client accepted..."
 #define WDS_MSG_REQUEST_ABORTED		"Request aborted..."
-#define WDS_MSG_REFERRAL						"Another Server will handle this request."
+#define WDS_MSG_REFERRAL				"Another Server will handle this request."
 
-#define WDS_MODE_RIS				0
+#define WDS_MODE_RIS			0
 #define WDS_MODE_WDS			1
 #define WDS_MODE_UNK			2
 
