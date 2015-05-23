@@ -1,4 +1,4 @@
-Mini WDS-Server
+Mini BINL-Server
 ================
 
 Contains only WDS and NCQ Stuff :)
