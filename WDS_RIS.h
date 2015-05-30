@@ -15,29 +15,25 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "WDS.h"
 #ifndef RIS
-#define RIS	1
-#define NIC_DRIVER_LIST_FILE				"Nics.txt"
+#define RIS                             1
+#define NIC_DRIVER_LIST_FILE		"Nics.txt"
 
-#define RIS_DRIVER_BUSTYPE_PCI			"5"
+#define RIS_DRIVER_BUSTYPE_PCI		"5"
 #define RIS_DRIVER_CHARACTERISTICS	"132"
 #define RIS_DRIVER_OFFSET_VENID		24
 #define RIS_DRIVER_OFFSET_DEVID		26
 
-#define PKT_NCQ		0x51434e81	/* Network Card Query */
+#define PKT_NCQ                         0x51434e81	/* Network Card Query */
 
 typedef struct _DRIVER
 {
-	uint16_t vid, pid;
-	char driver[256];
-	char service[256];
+    uint16_t vid, pid;
+    char driver[256];
+    char service[256];
 } DRIVER;
 
 int Handle_NCQ_Request(int con, char* Data, size_t Packetlen);
 int find_drv(uint16_t cvid, uint16_t cpid, DRIVER *drv);
 
-#ifdef _WIN32
-static __inline void eol(FILE *fd);
-#else
 static inline void eol(FILE *fd);
-#endif
 #endif

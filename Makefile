@@ -4,6 +4,7 @@ all: WDSServer
 
 WDSServer: clean Main.o WDS.o WDS_FileIO.o WDS_Request.o WDS_Socket.o WDS_RIS.o
 	$(CC) Main.o WDS.o WDS_RIS.o WDS_FileIO.o WDS_Request.o WDS_Socket.o -o WDSServer
+	cp cfg/*.txt ./
 
 main.o: Main.c
 	$(CC) $(CFLAGS) -c Main.c

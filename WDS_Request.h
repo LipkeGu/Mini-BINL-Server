@@ -17,7 +17,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #ifndef WDS_PACKET_H_
 #define WDS_PACKET_H_
-#define DHCP_MINIMAL_PACKET_SIZE			296
+
+#define DHCP_MAGIC_COOKIE                   (0x63825363)
+#define DHCP_MINIMAL_PACKET_SIZE			240
 
 #define BOOTP_REQUEST						1
 #define BOOTP_REPLY							2
@@ -32,7 +34,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define DHCPINFORM							8
 
 #define WDSNBP_OPTION						250
-#define IPV4_ADDR_LENGTH				4
+#define IPV4_ADDR_LENGTH                    4
 
 #define WDSBP_OPT_ARCHITECTURE              1
 #define WDSBP_OPT_NEXT_ACTION               2
@@ -91,37 +93,40 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // Values for WDSBP_OPT_NBP_VER.
 //
 
-#define WDSBP_OPTVAL_NBP_VER_7				0x0700
-#define WDSBP_OPTVAL_NBP_VER_8				0x0800
+#define WDSBP_OPTVAL_NBP_VER_7			0x0700
+#define WDSBP_OPTVAL_NBP_VER_8			0x0800
 
 #define BOOTP_OFFSET_BOOTPTYPE			0
-#define BOOTP_OFFSET_HWTYPE					1
-#define BOOTP_OFFSET_MACLEN					2
-#define BOOTP_OFFSET_HOPS						3
-#define BOOTP_OFFSET_TRANSID				4
-#define BOOTP_OFFSET_SECONDS				8
+#define BOOTP_OFFSET_HWTYPE             1
+#define BOOTP_OFFSET_MACLEN             2
+#define BOOTP_OFFSET_HOPS               3
+#define BOOTP_OFFSET_TRANSID			4
+#define BOOTP_OFFSET_SECONDS			8
 #define BOOTP_OFFSET_BOOTPFLAGS			10
-#define BOOTP_OFFSET_YOURIP					12
-#define BOOTP_OFFSET_CLIENTIP				16
+#define BOOTP_OFFSET_YOURIP             12
+#define BOOTP_OFFSET_CLIENTIP			16
 #define BOOTP_OFFSET_NEXTSERVER			20
-#define BOOTP_OFFSET_RELAYIP					24
-#define BOOTP_OFFSET_MACADDR				28
+#define BOOTP_OFFSET_RELAYIP			24
+#define BOOTP_OFFSET_MACADDR			28
 #define BOOTP_OFFSET_MACPADDING			34
 
-#define BOOTP_OFFSET_COOKIE					236
+#define BOOTP_OFFSET_COOKIE             236
+#define BOOTP_OFFSET_MSGTYPE            242
 #define BOOTP_OFFSET_VENOPTION			245
-#define BOOTP_OFFSET_GUID						254
-#define BOOTP_OFFSET_CARCH					273
-#define BOOTP_OFFSET_WDSNBP				277
-#define BOOTP_OFFSET_OPTIONS				279		/* WDSNBP */
-#define BOOTP_OFFSET_SYSARCH				289		/* WDSNBP */
+#define BOOTP_OFFSET_GUID               254
+#define BOOTP_OFFSET_CARCH              273
+#define BOOTP_OFFSET_WDSNBP             277
+#define BOOTP_OFFSET_OPTIONS			279		/* WDSNBP */
+#define BOOTP_OFFSET_SYSARCH			289		/* WDSNBP */
+
+#define BOOTP_FLAG_BROADCAST            128
+#define BOOTP_FLAG_UNICAST              0
 
 //
 // Values for NCQ (Driver Query).
 //
 
 int GetPacketType(int con, char* Data, size_t Datalen);
-int Handle_NBP_Request(int con, char* Data, size_t Packetlen, int found);
-int Handle_DHCP_Request(int con, char* Data, size_t Packetlen, int found);
-int GetClientinfo(int arch, unsigned char* hwadr, unsigned char* guid, int found);
+int Handle_DHCP_Request(int con, char* Data, int found, saddr* socket, int mode);
+int GetClientinfo(int arch, unsigned char* hwadr, int found);
 #endif

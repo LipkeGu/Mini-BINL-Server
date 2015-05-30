@@ -17,31 +17,44 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #ifndef WDS_SOCKET_H_
 #define WDS_SOCKET_H_
-#define WDS_LISTEN_PORT		4011
+#define WDS_LISTEN_PORT         4011
 
 #define SYSARCH_INTEL_X86		0
 #define SYSARCH_NEC_PC98		1
 #define SYSARCH_INTEL_IA64		2
 #define SYSARCH_DEC_ALPHA		3
-#define SYSARCH_ARC_x86		4
+#define SYSARCH_ARC_x86         4
 #define SYSARCH_INTEL_LEAN		5
 #define SYSARCH_INTEL_X64		6
 #define SYSARCH_INTEL_EFI		7
 
+
+#define WDS_MIN_PACKETSIZE     240
+#define PXE_MIN_PACKETSIZE     304
+
 int BCSockfd;
 int UCSockfd;
 
-struct sockaddr_in Bserv_addr;
+int socketlen;
+
+struct sockaddr_in from;
+socklen_t fromlen;
+
+struct sockaddr_in bfrom;
+socklen_t bfromlen;
+
 struct sockaddr_in Userv_addr;
+struct sockaddr_in Bserv_addr;
+typedef struct sockaddr saddr;
 
-int WDS_Recv_bootp(int con);
-int WDS_Recv_DHCP(int con);
+int BOOTP_listening(int con, saddr* socket, int mode);
+int DHCP_listening(int con, saddr* socket, int mode);
 
+int validateDHCPPacket(char* Data, size_t packetlen);
 int CreateBroadCastSocketAndBind(uint16_t port, in_addr_t in_addr);
-int DHCP_Send(int con, char* buf, size_t len);
 int CreateUnicastSocketAndBind(uint16_t port, in_addr_t in_addr);
 int bootp_start();
-int WDS_Send(int con, char* buf, size_t len);
-int startWinsock(void);
+int WDS_Send(int con, char* buf, size_t len, saddr* socket, int mode);
+int DHCP_Send(int con, char* buf, size_t len, saddr* socket, int mode);
 
 #endif /* WDS_SOCKET_H_ */

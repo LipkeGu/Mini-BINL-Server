@@ -12,247 +12,236 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-#define _CRT_SECURE_NO_WARNINGS
-#define _WINSOCK_DEPRECATED_NO_WARNINGS
 
 #include "WDS.h"
 
 void Set_Type(uint32_t NewType)
 {
-	RESPsize = 0;
-	RESPtype = NewType;
+    RESPsize = 0;
+    RESPtype = NewType;
 
-	memcpy(&RESPData[0], &RESPtype, sizeof(NewType));
-	Set_Size(sizeof(NewType));
+    memcpy(&RESPData[0], &RESPtype, sizeof(NewType));
+    Set_Size(sizeof(NewType));
 }
 
 void ZeroOut(void* Buffer, size_t length)
 {
-#ifdef _WIN32
-	ZeroMemory(Buffer, length);
-#else
-	bzero(Buffer, length);
-#endif
+    bzero(Buffer, length);
 }
 
 void Set_Size(size_t Newsize)
 {
-	RESPsize += Newsize;
+    RESPsize += Newsize;
 }
 
 void Set_EoP(unsigned char neweop)
 {
-	eop = neweop;
+    eop = neweop;
 }
 
 void Set_PKTLength()
 {
-	uint32_t _tmp = SWAB32(RESPsize);
-	memcpy(&RESPData[4], &_tmp, 4);
+    uint32_t _tmp = SWAB32(RESPsize);
+    memcpy(&RESPData[4], &_tmp, 4);
 }
 
 void logger(char* text)
 {
-	time_t now = time(0);
-	char* fn_log = NULL;
-
-#ifdef _WIN32
-	printf("%s\n", text);
-#else
-	openlog("WDSServer", LOG_CONS | LOG_PID, LOG_USER);
-	syslog(LOG_INFO, "%s", text);
-
-	closelog();
+#if DEBUGMODE == 1
+    printf("%s", text);
 #endif
+    
+    openlog("BINLSvc", LOG_CONS | LOG_PID, LOG_USER);
+    syslog(LOG_INFO, "%s", text);
+
+    closelog();
 }
 
 void print_values(int data_len, char* Data[])
 {
-	int i = 0;
+    int i = 0;
 
-	if (data_len > 1)
-		for (i = 0; i < data_len; i++)
-			printf("[D] Value %d: %s\n", i, Data[i]);
+    if (data_len > 1)
+        for (i = 0; i < data_len; i++)
+            printf("[D] Value %d: %s\n", i, Data[i]);
 }
 
 void handle_args(int data_len, char* Data[])
 {
-	int i = 0;
+    int i = 0;
 
-	if (data_len > 1)
-		for (i = 0; i < data_len; i++)
-		{
-			if (memcmp(Data[i], "-datadir", 9) == 0) /* root Directory */
-				sprintf(Config.server_root, "%s", Data[(i + 1)]);
-		}
+    if (data_len > 1)
+        for (i = 0; i < data_len; i++)
+        {    
+            if (memcmp(Data[i], "-datadir", 8) == 0) /* root Directory */
+                sprintf(Config.server_root, "%s", Data[(i + 1)]);
+        }
 }
 
 char* replace_str(const char* str, const char* old, const char* newchar)
 {
-	char* ret, *r;
-	const char* p, *q;
+    char* ret, *r;
+    const char* p, *q;
 
-	if (newchar == NULL || str == NULL || old == NULL)
-		return "\0";
+    if (newchar == NULL || str == NULL || old == NULL)
+        return "\0";
 
-	if (strlen(str) >= 1 && strlen(newchar) >= 1 && strlen(old) >= 1)
-	{
-		size_t oldlen = strlen(old);
-		size_t count = 0, retlen = 0, newlen = strlen(newchar);
+    if (strlen(str) >= 1 && strlen(newchar) >= 1 && strlen(old) >= 1)
+    {
+        size_t oldlen = strlen(old);
+        size_t count = 0, retlen = 0, newlen = strlen(newchar);
 
-		if (oldlen != newlen)
-		{
-			for (count = 0, p = str; (q = strstr(p, old)) != NULL; p = q + oldlen)
-				count++;
+        if (oldlen != newlen)
+        {
+            for (count = 0, p = str; (q = strstr(p, old)) != NULL; p = q + oldlen)
+                count++;
 
-			/* this is undefined if p - str > PTRDIFF_MAX */
-			retlen = p - str + strlen(p) + count * (newlen - oldlen);
-		}
-		else
-			retlen = strlen(str);
+            retlen = p - str + strlen(p) + count * (newlen - oldlen);
+        }
+        else
+            retlen = strlen(str);
 
-		if ((ret = malloc(retlen + 1)) == NULL)
-			return NULL;
+        if ((ret = malloc(retlen + 1)) == NULL)
+            return NULL;
 
-		for (r = ret, p = str; (q = strstr(p, old)) != NULL; p = q + oldlen)
-		{
-			/* this is undefined if q - p > PTRDIFF_MAX */
-			ptrdiff_t l = q - p;
-			memcpy(r, p, l);
-			r += l;
-			memcpy(r, newchar, newlen);
-			r += newlen;
-		}
+        for (r = ret, p = str; (q = strstr(p, old)) != NULL; p = q + oldlen)
+        {
+            ptrdiff_t l = q - p;
+        
+            memcpy(r, p, l);
+            r += l;
+		
+            memcpy(r, newchar, newlen);
+            r += newlen;
+        }
 
-		strcpy(r, p);
+        strcpy(r, p);
 
-		return ret;
-	}
+        return ret;
+    }
 	else
-		return "";
+        return "";
 }
 
 size_t ascii_to_utf16le(const char* src, char* dest, size_t offset)
 {
-	size_t ulen = 0, i = 0, len = strlen(src);
+    size_t ulen = 0, i = 0, len = strlen(src);
 
-	for (i = 0; i < len; i++)
-	{
-		dest[offset + ulen] = src[i];
-		ulen += 2;
-	}
+    for (i = 0; i < len; i++)
+    {
+    	dest[offset + ulen] = src[i];
+        ulen += 2;
+    }
 
-	return ulen;
+    return ulen;
 }
 
 const char* hostname_to_ip(const char* hostname)
 {
-	struct hostent *he;
-	struct in_addr **addr_list;
-	int i = 0;
-	char* dump = NULL;
+    struct hostent *he;
+    struct in_addr **addr_list;
 
-	he = gethostbyname(hostname);
-	addr_list = (struct in_addr **) he->h_addr_list;
+    int i = 0;
 
-	for (i = 0; addr_list[i] != NULL; i++)
-		return inet_ntoa(*addr_list[i]);
+    he = gethostbyname(hostname);
+    addr_list = (struct in_addr **) he->h_addr_list;
 
-	return dump;	// silence the OSX Compiler.... ;(
+    for (i = 0; addr_list[i] != NULL; i++)
+        return inet_ntoa(*addr_list[i]);
+
+    return NULL;	// silence the OSX Compiler.... ;(
 }
 
 unsigned char get_string(FILE *fd, char* dest, size_t size)
 {
-	unsigned int i = 0;
-	unsigned char c = 0;
+    unsigned int i = 0;
+    unsigned char c = 0;
 
-	while (i < size)
-	{
-		if (fread(&c, 1, sizeof(c), fd) != sizeof(c))
-			break;
+    while (i < size)
+    {
+        if (fread(&c, 1, sizeof(c), fd) != sizeof(c))
+            break;
 
-		if (isspace(c))
-			break;
+        if (isspace(c))
+            break;
 
-		dest[i++] = c;
-	}
+        dest[i++] = c;
+    }
 
-	dest[i] = 0;
+    dest[i] = 0;
 
-	return c;
+    return c;
 }
 
 uint32_t IP2Bytes(const char* IP_address)
 {
-	struct in_addr ipvalue;
-	inet_pton(AF_INET, IP_address, &ipvalue);
+    struct in_addr ipvalue;
+    inet_pton(AF_INET, IP_address, &ipvalue);
 
-	return ipvalue.s_addr;
+    return ipvalue.s_addr;
 }
 
 int setDHCPRespType(int found)
 {
-	if (Client.lastDHCPType == 3)
-	{
-		return DHCPACK;
-	}
-	else
-		return DHCPOFFER;
+    if (Client.inDHCPMode == 1)
+        return DHCPOFFER;
+    else
+        return DHCPACK;
 }
 
 int isZeroIP(char* IP)
 {
-	char ZeroIP[4] = { 0x00, 0x00, 0x00, 0x00 };
+    char ZeroIP[4] = { 0x00, 0x00, 0x00, 0x00 };
 
-	if (memcmp(IP, ZeroIP, 4) == 0)
-		return 0;
-	else
-		return 1;
+    if (memcmp(IP, ZeroIP, 4) == 0)
+        return 0;
+    else
+        return 1;
 }
 
 int isValidDHCPType(int type)
 {
-	int result = 1;
+    int result = 1;
 
-	switch (type)
-	{
-	case DHCPDISCOVER:
-		result = 0;
-		Client.lastDHCPType = 1;
-		break;
+    switch (type)
+    {
+    case DHCPDISCOVER:
+        result = 0;
+        Client.lastDHCPType = 1;
+        break;
 	case DHCPOFFER:
-		result = 1;
-		Client.lastDHCPType = 2;
-		break;
+        result = 1;
+        Client.lastDHCPType = 2;
+        break;
 	case DHCPREQUEST:
-		result = 0;
-		Client.lastDHCPType = 3;
-		break;
+        result = 0;
+        Client.lastDHCPType = 3;
+        break;
 	case DHCPDECLINE:
-		result = 1;
-		Client.lastDHCPType = 4;
-		break;
+        result = 1;
+        Client.lastDHCPType = 4;
+        break;
 	case DHCPACK:
-		result = 1;
-		Client.lastDHCPType = 5;
-		break;
+        result = 1;
+        Client.lastDHCPType = 5;
+        break;
 	case DHCPNAK:
-		result = 1;
-		Client.lastDHCPType = 6;
-		break;
+        result = 1;
+        Client.lastDHCPType = 6;
+        break;
 	case DHCPRELEASE:
-		result = 1;
-		Client.lastDHCPType = 7;
-		break;
+        result = 1;
+        Client.lastDHCPType = 7;
+        break;
 	case DHCPINFORM:
-		result = 1;
-		Client.lastDHCPType = 8;
-		break;
+        result = 1;
+        Client.lastDHCPType = 8;
+        break;
 	default:
-		result = 1;
-		Client.lastDHCPType = 1;
-		break;
+        result = 1;
+        Client.lastDHCPType = 1;
+        break;
 	}
 
-	return result;
+    return result;
 }
