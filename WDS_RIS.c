@@ -19,20 +19,20 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 static inline void skipspaces(FILE *fd)
 {
-    unsigned char c = 0;
+	unsigned char c = 0;
 
-    while (!feof(fd) && !isspace(c))
-        if (fread(&c, 1, sizeof(c), fd) != sizeof(c))
-            break;
+	while (!feof(fd) && !isspace(c))
+		if (fread(&c, 1, sizeof(c), fd) != sizeof(c))
+			break;
 }
 
 static inline void eol(FILE *fd)
 {
-    unsigned char c = 0;
+	unsigned char c = 0;
 
-    while (!feof(fd) && (c != '\n') && (c != '\r'))
-	if (fread(&c, 1, sizeof(c), fd) != sizeof(c))
-            break;
+	while (!feof(fd) && (c != '\n') && (c != '\r'))
+		if (fread(&c, 1, sizeof(c), fd) != sizeof(c))
+			break;
 }
 
 int Handle_NCQ_Request(int con, char* Data, size_t Packetlen)
@@ -42,194 +42,194 @@ int Handle_NCQ_Request(int con, char* Data, size_t Packetlen)
 #define NCR_KO		0xc000000d	/* NOT FOUND! */
 #define PKT_NCR		0x52434e82	/* Network Card Reply */
 
-int retval = 1;
+	int retval = 1;
 
-if (Packetlen > 0)
-{
-	DRIVER drv;
-	uint16_t vid = 0, pid = 0;
-	size_t offset = 0;
-
-    char packet[500] = "";
-	const char ris_params[] =
-		"Description"		"2" "RIS NIC Card"
-		"Characteristics"	"1" RIS_DRIVER_CHARACTERISTICS
-		"BusType"		"1" RIS_DRIVER_BUSTYPE_PCI;
-
-	uint32_t type = SWAB32(PKT_NCR), value = 0, res = 0;
-	size_t ulen = 0;
-
-	memcpy(&vid, &Data[RIS_DRIVER_OFFSET_VENID], sizeof(vid));
-	memcpy(&pid, &Data[RIS_DRIVER_OFFSET_DEVID], sizeof(pid));
-
-	sprintf(logbuffer, "%s", "============= Driver Query =============\n");
-	logger(logbuffer);
-
-	if (find_drv(SWAB16(vid), SWAB16(pid), &drv) == 1)
+	if (Packetlen > 0)
 	{
-            memcpy(packet, &type, sizeof(type));
-            offset += sizeof(type);
+		DRIVER drv;
+		uint16_t vid = 0, pid = 0;
+		size_t offset = 0;
 
-            res = SWAB32(NCR_OK);
-            offset += 0x4; /* Packet len will be filled later */
+		char packet[500] = "";
+		const char ris_params[] =
+			"Description"		"2" "RIS NIC Card"
+			"Characteristics"	"1" RIS_DRIVER_CHARACTERISTICS
+			"BusType"		"1" RIS_DRIVER_BUSTYPE_PCI;
 
-            memcpy(&packet[offset], &res, sizeof(res));
-            offset += sizeof(res);
+		uint32_t type = SWAB32(PKT_NCR), value = 0, res = 0;
+		size_t ulen = 0;
 
-            value = SWAB32(0x2); /* Type */
-            memcpy(&packet[offset], &value, sizeof(value));
-            offset += sizeof(value);
+		memcpy(&vid, &Data[RIS_DRIVER_OFFSET_VENID], sizeof(vid));
+		memcpy(&pid, &Data[RIS_DRIVER_OFFSET_DEVID], sizeof(pid));
 
-            value = SWAB32(0x24); /* Base offset */
-            memcpy(&packet[offset], &value, sizeof(value));
-            offset += sizeof(value);
+		sprintf(logbuffer, "%s", "============= Driver Query =============\n");
+		logger(logbuffer);
 
-            offset += 0x8; /* Driver / Service name offset */
+		if (find_drv(SWAB16(vid), SWAB16(pid), &drv) == 1)
+		{
+			memcpy(packet, &type, sizeof(type));
+			offset += sizeof(type);
 
-            value = SWAB32(sizeof(ris_params)); /* Parameters */
-            memcpy(&packet[offset], &value, sizeof(value));
-            offset += sizeof(value);
+			res = SWAB32(NCR_OK);
+			offset += 0x4; /* Packet len will be filled later */
 
-            offset += 0x4; /* Parameters list offset */
-            sprintf(logbuffer, "Driver: %s\n", drv.driver);
-            logger(logbuffer);
+			memcpy(&packet[offset], &res, sizeof(res));
+			offset += sizeof(res);
 
-            sprintf(logbuffer, "Service: %s\n", drv.service);
-            logger(logbuffer);
+			value = SWAB32(0x2); /* Type */
+			memcpy(&packet[offset], &value, sizeof(value));
+			offset += sizeof(value);
 
-            sprintf(Data, "PCI\\VEN_%04X&DEV_%04X", drv.vid, drv.pid);
+			value = SWAB32(0x24); /* Base offset */
+			memcpy(&packet[offset], &value, sizeof(value));
+			offset += sizeof(value);
 
-            sprintf(logbuffer, "PCI-ID: PCI\\VEN_%X&DEV_%X\n", drv.vid, drv.pid);
-            logger(logbuffer);
+			offset += 0x8; /* Driver / Service name offset */
 
-            ulen = ascii_to_utf16le(Data, packet, offset);
-            offset += ulen + 2; /* PCI\VEN_XXXX&DEV_YYYY */
+			value = SWAB32(sizeof(ris_params)); /* Parameters */
+			memcpy(&packet[offset], &value, sizeof(value));
+			offset += sizeof(value);
 
-            /* We can fill Driver name offset */
-            value = SWAB32(offset);
-            memcpy(&packet[0x14], &value, sizeof(value));
+			offset += 0x4; /* Parameters list offset */
+			sprintf(logbuffer, "Driver: %s\n", drv.driver);
+			logger(logbuffer);
 
-            ulen = ascii_to_utf16le(drv.driver, packet, offset);
-            offset += ulen + 2; /* Driver name */
+			sprintf(logbuffer, "Service: %s\n", drv.service);
+			logger(logbuffer);
 
-            /* We can fill Service name offset */
-            value = SWAB32(offset);
-            memcpy(&packet[0x18], &value, sizeof(value));
+			sprintf(Data, "PCI\\VEN_%04X&DEV_%04X", drv.vid, drv.pid);
 
-            ulen = ascii_to_utf16le(drv.service, packet, offset);
-            offset += ulen + 2; /* Service name */
+			sprintf(logbuffer, "PCI-ID: PCI\\VEN_%X&DEV_%X\n", drv.vid, drv.pid);
+			logger(logbuffer);
 
-            /* We can fill Parameters list offset */
-            value = SWAB32(offset);
-            memcpy(&packet[0x20], &value, sizeof(value));
+			ulen = ascii_to_utf16le(Data, packet, offset);
+			offset += ulen + 2; /* PCI\VEN_XXXX&DEV_YYYY */
 
-            /* And now params */
-            memcpy(&packet[offset], ris_params, sizeof(ris_params));
-            offset += sizeof(ris_params) + 2;
+			/* We can fill Driver name offset */
+			value = SWAB32(offset);
+			memcpy(&packet[0x14], &value, sizeof(value));
 
-            /* Packet Length */
-            value = SWAB32(offset);
-            memcpy(&packet[0x4], &value, sizeof(value));
+			ulen = ascii_to_utf16le(drv.driver, packet, offset);
+			offset += ulen + 2; /* Driver name */
 
-            retval = WDS_Send(con, packet, offset, (saddr*)&from, 0);
+			/* We can fill Service name offset */
+			value = SWAB32(offset);
+			memcpy(&packet[0x18], &value, sizeof(value));
+
+			ulen = ascii_to_utf16le(drv.service, packet, offset);
+			offset += ulen + 2; /* Service name */
+
+			/* We can fill Parameters list offset */
+			value = SWAB32(offset);
+			memcpy(&packet[0x20], &value, sizeof(value));
+
+			/* And now params */
+			memcpy(&packet[offset], ris_params, sizeof(ris_params));
+			offset += sizeof(ris_params) + 2;
+
+			/* Packet Length */
+			value = SWAB32(offset);
+			memcpy(&packet[0x4], &value, sizeof(value));
+
+			retval = WDS_Send(con, packet, offset, (saddr*)&from, 0);
+		}
+		else /* Send NCR_KO packet when driver was not found... */
+		{
+			res = SWAB32(NCR_KO);
+			value = SWAB32(offset);
+
+			memcpy(&packet[offset], &value, sizeof(value));
+			offset += sizeof(offset);
+
+			memcpy(&packet[offset], &res, sizeof(res));
+			offset += sizeof(res);
+
+			sprintf(logbuffer, "[E]: Driver not found (PCI\\VEN_%X&DEV_%X)\n",
+				SWAB16(vid), SWAB16(pid));
+			logger(logbuffer);
+
+			retval = WDS_Send(con, packet, offset, (saddr*)&from, 0);
+
+			if (retval > 1)
+				retval = 0;
+		}
+
+		sprintf(logbuffer, "%s", "========================================\n");
+		logger(logbuffer);
 	}
-	else /* Send NCR_KO packet when driver was not found... */
-	{
-            res = SWAB32(NCR_KO);
-            value = SWAB32(offset);
 
-            memcpy(&packet[offset], &value, sizeof(value));
-            offset += sizeof(offset);
+	if (retval > 1)
+		retval = 0;
 
-            memcpy(&packet[offset], &res, sizeof(res));
-            offset += sizeof(res);
-
-            sprintf(logbuffer, "[E]: Driver not found (PCI\\VEN_%X&DEV_%X)\n",
-                SWAB16(vid), SWAB16(pid));
-            logger(logbuffer);
-
-            retval = WDS_Send(con, packet, offset, (saddr*)&from, 0);
-
-            if (retval > 1)
-                retval = 0;
-	}
-
-	sprintf(logbuffer, "%s", "========================================\n");
-	logger(logbuffer);
-    }
-
-    if (retval > 1)
-        retval = 0;
-
-    return retval;
+	return retval;
 }
 
 int find_drv(uint16_t cvid, uint16_t cpid, DRIVER *drv)
 {
-    int found = 0;
+	int found = 0;
 
-    if (Exist(NIC_DRIVER_LIST_FILE) == 0)
-    {
-        uint32_t vid, pid;
-	char buffer[1024];
-
-	FILE *fd = fopen(NIC_DRIVER_LIST_FILE, "r");
-
-	if (fd == NULL)
-            return 1;
-
-	while (found == 0)
+	if (Exist(NIC_DRIVER_LIST_FILE) == 0)
 	{
-            if (fread(buffer, 1, 4, fd) != 4)
-                break;
+		uint32_t vid, pid;
+		char buffer[1024];
 
-            buffer[4] = 0;
-            sscanf(buffer, "%x2", &vid);
-            skipspaces(fd);
+		FILE *fd = fopen(NIC_DRIVER_LIST_FILE, "r");
 
-            if (cvid == vid)
-            {
-                if (fread(buffer, 1, 4, fd) != 4)
-                    break;
+		if (fd == NULL)
+			return 1;
 
-                buffer[4] = 0;
-                sscanf(buffer, "%x2", &pid);
+		while (found == 0)
+		{
+			if (fread(buffer, 1, 4, fd) != 4)
+				break;
 
-		skipspaces(fd);
+			buffer[4] = 0;
+			sscanf(buffer, "%x2", &vid);
+			skipspaces(fd);
 
-                if (cpid == pid)
-                {
-                    if (!isspace(get_string(fd, drv->driver, sizeof(drv->driver))))
-                        skipspaces(fd);
+			if (cvid == vid)
+			{
+				if (fread(buffer, 1, 4, fd) != 4)
+					break;
 
-                    if (!isspace(get_string(fd, drv->service, sizeof(drv->service))))
-                        eol(fd);
+				buffer[4] = 0;
+				sscanf(buffer, "%x2", &pid);
 
-                    if ((cvid == vid) && (cpid == pid))
-                    {
-                        drv->vid = vid;
-                        drv->pid = pid;
+				skipspaces(fd);
 
-                        found = 1;
-                        break;
-                    }
-                    else
-                        continue;
-                }
-                else
-                    continue;
-            }
-            else
-                continue;
+				if (cpid == pid)
+				{
+					if (!isspace(get_string(fd, drv->driver, sizeof(drv->driver))))
+						skipspaces(fd);
+
+					if (!isspace(get_string(fd, drv->service, sizeof(drv->service))))
+						eol(fd);
+
+					if ((cvid == vid) && (cpid == pid))
+					{
+						drv->vid = vid;
+						drv->pid = pid;
+
+						found = 1;
+						break;
+					}
+					else
+						continue;
+				}
+				else
+					continue;
+			}
+			else
+				continue;
+		}
+
+		fclose(fd);
+	}
+	else
+	{
+		sprintf(logbuffer, "[E] File not Found: %s\n", NIC_DRIVER_LIST_FILE);
+		logger(logbuffer);
 	}
 
-	fclose(fd);
-}
-else
-{
-    sprintf(logbuffer, "[E] File not Found: %s\n", NIC_DRIVER_LIST_FILE);
-	logger(logbuffer);
-}
-
-    return found;
+	return found;
 }

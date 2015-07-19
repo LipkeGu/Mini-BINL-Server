@@ -22,15 +22,15 @@ int GetClientinfo(int arch, unsigned char* hwadr, int found)
 	if (found == 1)
 	{
 		Config.PXEClientPrompt = WDSBP_OPTVAL_PXE_PROMPT_OPTOUT;
-        
-                sprintf(logbuffer, "============== WDS Client ==============\n");
+
+		sprintf(logbuffer, "============== WDS Client ==============\n");
 		logger(logbuffer);
 
 		sprintf(logbuffer, "MAC: %02X:%02X:%02X:%02X:%02X:%02X\n",
 			hwadr[0], hwadr[1], hwadr[2], hwadr[3], hwadr[4], hwadr[5]);
 		logger(logbuffer);
 
-                sprintf(logbuffer, "CLIENT IP: %s\n", inet_ntoa(from.sin_addr));
+		sprintf(logbuffer, "CLIENT IP: %s\n", inet_ntoa(from.sin_addr));
 		logger(logbuffer);
 
 		switch (Client.Action)
@@ -157,15 +157,15 @@ int GetClientinfo(int arch, unsigned char* hwadr, int found)
 
 		if (Server.RequestID == 99)
 			Server.RequestID = 1;
-        
-        Client.ActionDone = 1;
+
+		Client.ActionDone = 1;
 		return 1;
 	}
 	else
 	{
-        if (Config.AllowUnknownClients == 0 && Config.ShowClientRequests == 1)
+		if (Config.AllowUnknownClients == 0 && Config.ShowClientRequests == 1)
 		{
-            sprintf(logbuffer, "======== WDS (Request #%d) ========\n", Server.RequestID);
+			sprintf(logbuffer, "======== WDS (Request #%d) ========\n", Server.RequestID);
 			logger(logbuffer);
 
 			sprintf(logbuffer, "MAC: %02X:%02X:%02X:%02X:%02X:%02X\n",
@@ -182,14 +182,14 @@ int GetClientinfo(int arch, unsigned char* hwadr, int found)
 
 int Handle_DHCP_Request(int con, char* Data, int found, saddr* socket, int mode)
 {
-    char ZeroIP[4] = { 0x00, 0x00, 0x00, 0x00 };
-    char Bootreply[1] = { BOOTP_REPLY };
+	char ZeroIP[4] = { 0x00, 0x00, 0x00, 0x00 };
+	char Bootreply[1] = { BOOTP_REPLY };
 	char DHCP_ACK[3] = { 0x35, 0x01, setDHCPRespType(found) };
 	char Vendoropt[2] = { 0x3C, 0x09 };
 	char DHCPEnd[1] = { 0xff };
 	char idtopt[2] = { 0x36, 0x04 };
 	char Rtropt[2] = { 0x03, IPV4_ADDR_LENGTH };
-    char netopt[2] = { 0x01, IPV4_ADDR_LENGTH };
+	char netopt[2] = { 0x01, IPV4_ADDR_LENGTH };
 
 	if (memcmp(&Data[BOOTP_OFFSET_CLIENTIP], ZeroIP, IPV4_ADDR_LENGTH) != 0 &&
 		memcmp(&Data[BOOTP_OFFSET_NEXTSERVER], ZeroIP, IPV4_ADDR_LENGTH) == 0)
@@ -255,7 +255,7 @@ int Handle_DHCP_Request(int con, char* Data, int found, saddr* socket, int mode)
 
 	if (Client.isWDSRequest == 0)
 		sprintf(Client.Bootfile, DHCP_BOOTFILE);
-    
+
 	memcpy(&RESPData[RESPsize], Client.Bootfile, sizeof(Client.Bootfile));
 	Set_Size(sizeof(Client.Bootfile));
 
@@ -281,79 +281,79 @@ int Handle_DHCP_Request(int con, char* Data, int found, saddr* socket, int mode)
 	sprintf(&RESPData[RESPsize], "PXEClient");
 	Set_Size(9);
 
-    /* Send option 1 & 3 only when we have an WDS request... otherwise it is 
-     * already done by the provided dhcp service! */
-    
-    if (Client.isWDSRequest == 1)
-    {
-        /* Option Netmask (1) */
-	
-        memcpy(&RESPData[RESPsize], netopt, sizeof(netopt));
-        Set_Size(sizeof(netopt));
+	/* Send option 1 & 3 only when we have an WDS request... otherwise it is
+	 * already done by the provided dhcp service! */
 
-        memcpy(&RESPData[RESPsize], &Config.SubnetMask, sizeof(Config.SubnetMask));
-        Set_Size(sizeof(Config.SubnetMask));
-    
-        /* Option Router (3) */
-        memcpy(&RESPData[RESPsize], Rtropt, sizeof(Rtropt));
-        Set_Size(sizeof(Rtropt));
+	if (Client.isWDSRequest == 1)
+	{
+		/* Option Netmask (1) */
 
-        memcpy(&RESPData[RESPsize], &Config.ServerIP, sizeof(Config.ServerIP));
-        Set_Size(sizeof(Config.ServerIP));
-    }
-    
-    if (found == 1)
-    {
-        if (Client.WDSMode == WDS_MODE_WDS)
-        {
-            /* Boot Configuration Store (252) */
-            char bcdopt[2] = { 0xfc, strlen(Client.BCDPath) };
+		memcpy(&RESPData[RESPsize], netopt, sizeof(netopt));
+		Set_Size(sizeof(netopt));
 
-            memcpy(&RESPData[RESPsize], bcdopt, sizeof(bcdopt));
-            Set_Size(sizeof(bcdopt));
+		memcpy(&RESPData[RESPsize], &Config.SubnetMask, sizeof(Config.SubnetMask));
+		Set_Size(sizeof(Config.SubnetMask));
 
-            memcpy(&RESPData[RESPsize], Client.BCDPath, strlen(Client.BCDPath));
-            Set_Size(strlen(Client.BCDPath));
-        }
+		/* Option Router (3) */
+		memcpy(&RESPData[RESPsize], Rtropt, sizeof(Rtropt));
+		Set_Size(sizeof(Rtropt));
 
-        sprintf(logbuffer, "========================================\n");
-        logger(logbuffer);
-    }
-    else
-    {
-        /* WDSNBP related informations */
-        if (Client.ActionDone == 0)
-            Client.Action = WDSBP_OPTVAL_ACTION_APPROVAL;
+		memcpy(&RESPData[RESPsize], &Config.ServerIP, sizeof(Config.ServerIP));
+		Set_Size(sizeof(Config.ServerIP));
+	}
 
-        if (Config.AllowUnknownClients == 0)
-        {
-            char aprovalmsg[29] = {
-                WDSBP_OPT_NEXT_ACTION, 0x01, Client.Action,
-                WDSBP_OPT_REQUEST_ID, 0x04, 0x00, 0x00, 0x00, Server.RequestID,
-                WDSBP_OPT_POLL_INTERVAL, 0x02, 0x00, Config.PollIntervall,
-                WDSBP_OPT_POLL_RETRY_COUNT, 0x02, 0x00, Config.TFTPRetryCount,
-                WDSBP_OPT_ACTION_DONE, 0x01, Client.ActionDone,
-                WDSBP_OPT_VERSION_QUERY, 0x01, Config.VersionQuery,
-                WDSBP_OPT_PXE_CLIENT_PROMPT, 0x01, Config.PXEClientPrompt, 
-                WDSBP_OPT_PXE_PROMPT_DONE, 0x01, Config.PXEClientPrompt };
+	if (found == 1)
+	{
+		if (Client.WDSMode == WDS_MODE_WDS)
+		{
+			/* Boot Configuration Store (252) */
+			char bcdopt[2] = { 0xfc, strlen(Client.BCDPath) };
 
-            char admopt[2] = { 0xfa, sizeof(aprovalmsg) };
+			memcpy(&RESPData[RESPsize], bcdopt, sizeof(bcdopt));
+			Set_Size(sizeof(bcdopt));
 
-            memcpy(&RESPData[RESPsize], admopt, sizeof(admopt));
-            Set_Size(sizeof(admopt));
+			memcpy(&RESPData[RESPsize], Client.BCDPath, strlen(Client.BCDPath));
+			Set_Size(strlen(Client.BCDPath));
+		}
 
-            memcpy(&RESPData[RESPsize], aprovalmsg, sizeof(aprovalmsg));
-            Set_Size(sizeof(aprovalmsg));
-            
-        }
-    }
+		sprintf(logbuffer, "========================================\n");
+		logger(logbuffer);
+	}
+	else
+	{
+		/* WDSNBP related informations */
+		if (Client.ActionDone == 0)
+			Client.Action = WDSBP_OPTVAL_ACTION_APPROVAL;
 
-    /* End of DHCP-Options */
+		if (Config.AllowUnknownClients == 0)
+		{
+			char aprovalmsg[29] = {
+				WDSBP_OPT_NEXT_ACTION, 0x01, Client.Action,
+				WDSBP_OPT_REQUEST_ID, 0x04, 0x00, 0x00, 0x00, Server.RequestID,
+				WDSBP_OPT_POLL_INTERVAL, 0x02, 0x00, Config.PollIntervall,
+				WDSBP_OPT_POLL_RETRY_COUNT, 0x02, 0x00, Config.TFTPRetryCount,
+				WDSBP_OPT_ACTION_DONE, 0x01, Client.ActionDone,
+				WDSBP_OPT_VERSION_QUERY, 0x01, Config.VersionQuery,
+				WDSBP_OPT_PXE_CLIENT_PROMPT, 0x01, Config.PXEClientPrompt,
+				WDSBP_OPT_PXE_PROMPT_DONE, 0x01, Config.PXEClientPrompt };
+
+			char admopt[2] = { 0xfa, sizeof(aprovalmsg) };
+
+			memcpy(&RESPData[RESPsize], admopt, sizeof(admopt));
+			Set_Size(sizeof(admopt));
+
+			memcpy(&RESPData[RESPsize], aprovalmsg, sizeof(aprovalmsg));
+			Set_Size(sizeof(aprovalmsg));
+
+		}
+	}
+
+	/* End of DHCP-Options */
 	memcpy(&RESPData[RESPsize], DHCPEnd, sizeof(DHCPEnd));
 	Set_Size(sizeof(DHCPEnd));
-    
-    if (Client.inDHCPMode == 0)
-       return WDS_Send(con, RESPData, RESPsize, NULL, mode);
-    else
-       return DHCP_Send(con, RESPData, RESPsize, NULL, mode);
+
+	if (Client.inDHCPMode == 0)
+		return WDS_Send(con, RESPData, RESPsize, NULL, mode);
+	else
+		return DHCP_Send(con, RESPData, RESPsize, NULL, mode);
 }

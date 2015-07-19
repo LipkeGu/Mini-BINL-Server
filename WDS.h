@@ -145,7 +145,7 @@ struct Server_Info
 	char dnsdomain[255];
 	char nbname[64];
 	char service[64];
-	
+
 	int RequestID;
 } Server;
 

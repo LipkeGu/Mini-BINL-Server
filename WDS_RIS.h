@@ -27,9 +27,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 typedef struct _DRIVER
 {
-    uint16_t vid, pid;
-    char driver[256];
-    char service[256];
+	uint16_t vid, pid;
+	char driver[256];
+	char service[256];
 } DRIVER;
 
 int Handle_NCQ_Request(int con, char* Data, size_t Packetlen);
