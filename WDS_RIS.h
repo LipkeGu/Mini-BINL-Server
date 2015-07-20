@@ -35,5 +35,9 @@ typedef struct _DRIVER
 int Handle_NCQ_Request(int con, char* Data, size_t Packetlen);
 int find_drv(uint16_t cvid, uint16_t cpid, DRIVER *drv);
 
+#ifndef _WIN32
 static inline void eol(FILE *fd);
+#else
+static __inline void eol(FILE *fd);
+#endif
 #endif

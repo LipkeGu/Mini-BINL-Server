@@ -13,6 +13,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#define _CRT_SECURE_NO_WARNINGS
+#define _WINSOCK_DEPRECATED_NO_WARNINGS
+
 #include "WDS.h"
 
 void Set_Type(uint32_t NewType)
@@ -47,10 +50,15 @@ void Set_PKTLength()
 
 void logger(char* text)
 {
+#ifndef _WIN32
 	openlog("BINLSvc", LOG_CONS | LOG_PID, LOG_USER);
 	syslog(LOG_INFO, "%s", text);
 
 	closelog();
+
+#else
+	printf("%s", text);
+#endif
 }
 
 void print_values(int data_len, char* Data[])

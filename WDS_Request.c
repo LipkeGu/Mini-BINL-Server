@@ -69,6 +69,23 @@ int GetClientinfo(int arch, unsigned char* hwadr, int found)
 
 		logger(logbuffer);
 
+		switch (Client.PXEPrompt)
+		{
+		case WDSBP_OPTVAL_PXE_PROMPT_OPTIN:
+			sprintf(logbuffer, "PROMPT: OptIn\n");
+			break;
+		case WDSBP_OPTVAL_PXE_PROMPT_OPTOUT:
+			sprintf(logbuffer, "PROMPT: OptOut\n");
+			break;
+		case WDSBP_OPTVAL_PXE_PROMPT_NOPROMPT:
+			sprintf(logbuffer, "PROMPT: NOPROMPT\n");
+			break;
+		default:
+			break;
+		}
+
+		logger(logbuffer);
+
 		switch (arch)
 		{
 		case SYSARCH_INTEL_X86:
@@ -190,6 +207,9 @@ int Handle_DHCP_Request(int con, char* Data, int found, saddr* socket, int mode)
 	char idtopt[2] = { 0x36, 0x04 };
 	char Rtropt[2] = { 0x03, IPV4_ADDR_LENGTH };
 	char netopt[2] = { 0x01, IPV4_ADDR_LENGTH };
+	
+	uint32_t i = 0;
+
 
 	if (memcmp(&Data[BOOTP_OFFSET_CLIENTIP], ZeroIP, IPV4_ADDR_LENGTH) != 0 &&
 		memcmp(&Data[BOOTP_OFFSET_NEXTSERVER], ZeroIP, IPV4_ADDR_LENGTH) == 0)
@@ -327,6 +347,7 @@ int Handle_DHCP_Request(int con, char* Data, int found, saddr* socket, int mode)
 
 		if (Config.AllowUnknownClients == 0)
 		{
+			/* TODO Assign types instead of hardcoding! */
 			char aprovalmsg[29] = {
 				WDSBP_OPT_NEXT_ACTION, 0x01, Client.Action,
 				WDSBP_OPT_REQUEST_ID, 0x04, 0x00, 0x00, 0x00, Server.RequestID,
@@ -334,8 +355,8 @@ int Handle_DHCP_Request(int con, char* Data, int found, saddr* socket, int mode)
 				WDSBP_OPT_POLL_RETRY_COUNT, 0x02, 0x00, Config.TFTPRetryCount,
 				WDSBP_OPT_ACTION_DONE, 0x01, Client.ActionDone,
 				WDSBP_OPT_VERSION_QUERY, 0x01, Config.VersionQuery,
-				WDSBP_OPT_PXE_CLIENT_PROMPT, 0x01, Config.PXEClientPrompt,
-				WDSBP_OPT_PXE_PROMPT_DONE, 0x01, Config.PXEClientPrompt };
+				WDSBP_OPT_PXE_CLIENT_PROMPT, 0x01, Client.PXEPrompt,
+				WDSBP_OPT_PXE_PROMPT_DONE, 0x01, Client.PXEPrompt };
 
 			char admopt[2] = { 0xfa, sizeof(aprovalmsg) };
 

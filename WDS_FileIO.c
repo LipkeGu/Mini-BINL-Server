@@ -36,6 +36,7 @@ int GetClientRule(const unsigned char* MACb)
 
 	int Action = 0;
 	int Mode = 0;
+	int Prompt = 0;
 	int i = 0;
 	int result = 0;
 	int found = 0;
@@ -48,7 +49,8 @@ int GetClientRule(const unsigned char* MACb)
 		return 1;
 
 	while (!feof(fil) && found == 0)
-		if (fscanf(fil, "%X-%X-%X-%X-%X-%X | %d | %d\n", &MACa[0], &MACa[1], &MACa[2], &MACa[3], &MACa[4], &MACa[5], &Action, &Mode) > 3)
+		if (fscanf(fil, "%X-%X-%X-%X-%X-%X | %d | %d | %d\n", 
+			&MACa[0], &MACa[1], &MACa[2], &MACa[3], &MACa[4], &MACa[5], &Action, &Mode, &Prompt) > 3)
 		{
 			for (i = 0; i < 6; i++)
 				mac[i] = (unsigned char)MACa[i];
@@ -78,6 +80,22 @@ int GetClientRule(const unsigned char* MACb)
 			break;
 		default:
 			Client.WDSMode = Config.DefaultMode;
+			break;
+		}
+
+		switch (Prompt)
+		{
+		case 0:
+			Client.PXEPrompt = WDSBP_OPTVAL_PXE_PROMPT_OPTIN;
+			break;
+		case 1:
+			Client.PXEPrompt = WDSBP_OPTVAL_PXE_PROMPT_OPTOUT;
+			break;
+		case 2:
+			Client.PXEPrompt = WDSBP_OPTVAL_PXE_PROMPT_NOPROMPT;
+			break;
+		default:
+			Client.PXEPrompt = Config.PXEClientPrompt;
 			break;
 		}
 
@@ -128,6 +146,8 @@ int GetServerSettings()
 			fscanf(fil, "ShowClientRequests: %d\n", &Config.ShowClientRequests);
 			fscanf(fil, "DefaultAction: %d\n", &Config.DefaultAction);
 			fscanf(fil, "DefaultMode: %d\n", &Config.DefaultMode);
+			fscanf(fil, "PXEClientPrompt: %d\n", &Config.PXEClientPrompt);
+
 		}
 
 		if (fclose(fil) == 0)

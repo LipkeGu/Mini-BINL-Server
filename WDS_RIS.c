@@ -17,7 +17,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
 #include "WDS.h"
 
+#ifndef _WIN32
 static inline void skipspaces(FILE *fd)
+#else
+static __inline void skipspaces(FILE *fd)
+#endif
 {
 	unsigned char c = 0;
 
@@ -25,8 +29,11 @@ static inline void skipspaces(FILE *fd)
 		if (fread(&c, 1, sizeof(c), fd) != sizeof(c))
 			break;
 }
-
+#ifndef _WIN32
 static inline void eol(FILE *fd)
+#else
+static __inline void eol(FILE *fd)
+#endif
 {
 	unsigned char c = 0;
 

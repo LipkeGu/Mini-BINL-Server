@@ -13,6 +13,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#define _CRT_SECURE_NO_WARNINGS
+#define _WINSOCK_DEPRECATED_NO_WARNINGS
+
 #include "WDS.h"
 
 int main(int argc, char* argv[])
@@ -36,6 +39,7 @@ int main(int argc, char* argv[])
 		Config.ShowClientRequests = 1;
 		Config.DHCPReqDetection = 1;
 		Config.ShowClientRequests = 1;
+		Config.PXEClientPrompt = 1;
 	}
 
 	Client.ActionDone = 0;
@@ -51,6 +55,7 @@ int main(int argc, char* argv[])
 
 	handle_args(argc, argv);
 
+#ifndef _WIN32
 	pid_t mainpid = fork();
 #if DEBUGMODE == 1
 	bootp_start();
@@ -64,6 +69,8 @@ int main(int argc, char* argv[])
 	else
 		exit(0);
 #endif
-
+#else
+	bootp_start();
+#endif
 	return 0;
 }

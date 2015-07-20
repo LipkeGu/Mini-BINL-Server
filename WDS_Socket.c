@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "WDS.h"
 
-int CreateUnicastSocketAndBind(uint16_t port, in_addr_t in_addr)
+int CreateUnicastSocketAndBind(int port, in_addr_t in_addr)
 {
 	char enabled[1] = { 0x01 };
 	int sockfd = SOCKET_ERROR;
@@ -37,8 +37,8 @@ int CreateUnicastSocketAndBind(uint16_t port, in_addr_t in_addr)
 			memset(&Userv_addr, 0, sizeof(Userv_addr));
 
 			Userv_addr.sin_family = AF_INET;
-			Userv_addr.sin_addr.s_addr = INADDR_ANY;
-			Userv_addr.sin_port = htons(4011);
+			Userv_addr.sin_addr.s_addr = in_addr;
+			Userv_addr.sin_port = htons(port);
 
 			if (bind(sockfd, (struct sockaddr*)&Userv_addr, sizeof(Userv_addr)) < 0)
 			{
@@ -57,18 +57,13 @@ int CreateUnicastSocketAndBind(uint16_t port, in_addr_t in_addr)
 	return sockfd;
 }
 
-int CreateBroadCastSocketAndBind(uint16_t port, in_addr_t in_addr)
+int CreateBroadCastSocketAndBind(int port, in_addr_t in_addr)
 {
 	char  enabled[1] = { 0x01 };
 	int sockfd = SOCKET_ERROR;
 	sockfd = socket(AF_INET, SOCK_DGRAM, 0);
 
-	if (sockfd == SOCKET_ERROR)
-	{
-		sockfd = SOCKET_ERROR;
-		printf("Cant open Broadcast Socket!\n");
-	}
-	else
+	if (sockfd != SOCKET_ERROR)
 	{
 
 		if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, enabled, sizeof(int)) == 0 &&
@@ -78,8 +73,8 @@ int CreateBroadCastSocketAndBind(uint16_t port, in_addr_t in_addr)
 			memset(&bfrom, 0, sizeof(bfrom));
 
 			Bserv_addr.sin_family = AF_INET;
-			Bserv_addr.sin_addr.s_addr = INADDR_ANY;
-			Bserv_addr.sin_port = htons(67);
+			Bserv_addr.sin_addr.s_addr = in_addr;
+			Bserv_addr.sin_port = htons(port);
 
 			if (bind(sockfd, (struct sockaddr*)&Bserv_addr, sizeof(Bserv_addr)) < 0)
 			{
@@ -96,35 +91,44 @@ int CreateBroadCastSocketAndBind(uint16_t port, in_addr_t in_addr)
 
 int bootp_start()
 {
+
+#ifdef _WIN32
+	WSADATA wsa;
+	WSAStartup(MAKEWORD(2, 0), &wsa);
+#endif
+
 	int bootp_socket = SOCKET_ERROR;
+#ifndef _WIN32
 	int dhcp_socket = SOCKET_ERROR;
+#endif
 	int hostretval = 0;
 
 	hostretval = gethostname(Server.nbname, sizeof(Server.nbname));
 	Config.ServerIP = IP2Bytes(hostname_to_ip(Server.nbname));
 	Config.SubnetMask = IP2Bytes("255.255.255.0");
-
+#ifndef _WIN32
 	pid_t pid = fork();
-
 	if (pid > 0)
 	{
+#endif
 		bootp_socket = CreateUnicastSocketAndBind(Config.BOOTPPort, INADDR_ANY);
 
 		if (bootp_socket != SOCKET_ERROR)
 			return BOOTP_listening(bootp_socket, (saddr*)&from, 0);
 		else
 			return bootp_socket;
+#ifndef _WIN32
 	}
 	else
 	{
-		dhcp_socket = CreateBroadCastSocketAndBind(Config.DHCPPort, INADDR_BROADCAST);
+		dhcp_socket = CreateBroadCastSocketAndBind(Config.DHCPPort, INADDR_ANY);
 
 		if (dhcp_socket != SOCKET_ERROR)
 			return DHCP_listening(dhcp_socket, (saddr*)&bfrom, 1);
 		else
 			return dhcp_socket;
 	}
-
+#endif
 	return 1;
 }
 
@@ -134,7 +138,8 @@ int DHCP_listening(int con, saddr* socket, int mode)
 		return 1;
 
 	Client.inDHCPMode = 1;
-	int retval = 0, load = 0;
+	int retval = 0, load = 0, i = 0, hasflag = 0;
+	
 	char Buffer[1460];
 
 	ZeroOut(Buffer, sizeof(Buffer));
@@ -144,20 +149,25 @@ int DHCP_listening(int con, saddr* socket, int mode)
 		socketlen = sizeof(bfrom);
 		retval = recvfrom(con, Buffer, sizeof(Buffer), 0, (struct sockaddr*)&bfrom, &socketlen);
 
-		if (retval < 0)
-			return errno;
-		else
-		{
-			retval = Handle_DHCP_Request(con, Buffer, 0, NULL, mode);
+		for (i; i < sizeof(Buffer); i = i++)
+			if (memcmp("PXEClient", &Buffer[i], 9) == 0)
+				hasflag = 1;
 
-			ZeroOut(&Client, sizeof(Client));
-
-			if (retval == SOCKET_ERROR)
+		if (hasflag == 1)
+			if (retval < 0)
+				return errno;
+			else
 			{
-				printf("[E] Handle_DHCP_Request(): %s\n", strerror(errno));
-				return SOCKET_ERROR;
+				retval = Handle_DHCP_Request(con, Buffer, 0, NULL, mode);
+
+				ZeroOut(&Client, sizeof(Client));
+
+				if (retval == SOCKET_ERROR)
+				{
+					printf("[E] Handle_DHCP_Request(): %s\n", strerror(errno));
+					return SOCKET_ERROR;
+				}
 			}
-		}
 	}
 }
 

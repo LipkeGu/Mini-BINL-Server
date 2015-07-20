@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <time.h>
 #include <ctype.h>
 #include <sys/types.h>
+#ifndef _WIN32 
 #include <netdb.h>
 #include <unistd.h>
 #include <sys/socket.h>
@@ -31,23 +32,46 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <sys/wait.h>
 #include <dirent.h>
 
+static inline void skipspaces(FILE *fd);
+static inline void eol(FILE *fd);
+
 #define SOCKET_ERROR		-1
 #define WSAGetLastError 	errno
 #define WSACleanup  		cleanup
 #define INVALID_SOCKET		-1
 #define closesocket         close
+#else
+
+#pragma comment(lib, "Ws2_32.lib")
+
+static __inline void skipspaces(FILE *fd);
+static __inline void eol(FILE *fd);
+#define in_addr_t unsigned long
+
+#include <inttypes.h>
+#include <winsock2.h>
+#include <WS2tcpip.h>
+#endif
+
+#ifndef WDS_H_
+#define WDS_H_
+
+#define bzero(b,len) (memset((b), '\0', (len)), (void) 0)  
+#define bcopy(b1,b2,len) (memmove((b2), (b1), (len)), (void) 0)
+
+#define HAVEFORKSUPPORT
+#define WDS_MSG_LOOKING_FOR_POLICY	"Server is looking for client policy..."
+
+#define WDS_MODE_RIS			0
+#define WDS_MODE_WDS			1
+#define WDS_MODE_UNK			2
+
+#define DEBUGMODE               0
+
 
 #ifndef DS
 #define DS			"/"
 #endif
-
-#define HAVEFORKSUPPORT
-
-static inline void skipspaces(FILE *fd);
-static inline void eol(FILE *fd);
-
-#ifndef WDS_H_
-#define WDS_H_
 
 #include "WDS_Socket.h"
 #include "WDS_Request.h"
@@ -100,8 +124,8 @@ static inline void eol(FILE *fd);
 
 struct server_config
 {
-	uint16_t BOOTPPort;
-	uint16_t DHCPPort;
+	short BOOTPPort;
+	short DHCPPort;
 
 	uint32_t ServerIP;
 	uint32_t SubnetMask;
@@ -138,6 +162,8 @@ struct Client_Info
 	int inDHCPMode;
 	int lastDHCPType;
 	int isWDSRequest;
+	int PXEPrompt;
+
 } Client;
 
 struct Server_Info
@@ -176,14 +202,6 @@ void Set_PKTLength();
 void print_values(int data_len, char* Data[]);
 void ZeroOut(void* Buffer, size_t length);
 
-#define WDS_MSG_LOOKING_FOR_POLICY	"Server is looking for client policy..."
-
-#define WDS_MODE_RIS			0
-#define WDS_MODE_WDS			1
-#define WDS_MODE_UNK			2
-
-
-#define DEBUGMODE               0
 
 
 #endif /* WDS_H_ */

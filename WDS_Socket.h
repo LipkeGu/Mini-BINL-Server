@@ -51,8 +51,8 @@ int BOOTP_listening(int con, saddr* socket, int mode);
 int DHCP_listening(int con, saddr* socket, int mode);
 
 int validateDHCPPacket(char* Data, size_t packetlen);
-int CreateBroadCastSocketAndBind(uint16_t port, in_addr_t in_addr);
-int CreateUnicastSocketAndBind(uint16_t port, in_addr_t in_addr);
+int CreateBroadCastSocketAndBind(int port, in_addr_t in_addr);
+int CreateUnicastSocketAndBind(int port, in_addr_t in_addr);
 int bootp_start();
 int WDS_Send(int con, char* buf, size_t len, saddr* socket, int mode);
 int DHCP_Send(int con, char* buf, size_t len, saddr* socket, int mode);
