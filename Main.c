@@ -22,7 +22,7 @@ int main(int argc, char* argv[])
 {
 	Config.BOOTPPort = 4011;
 	Config.DHCPPort = 67;
-	
+
 	Config.ReferalIP = (unsigned long)0;
 	Config.RouterIP = (unsigned long)0;
 
@@ -30,12 +30,6 @@ int main(int argc, char* argv[])
 
 	wdsnbp.ActionDone = 0;
 	wdsnbp.NextAction = WDSBP_OPTVAL_ACTION_APPROVAL;
-
-	if (GetServerSettings() == 1)
-	{
-		
-	}
-
 	wdsnbp.PollIntervall = Config.PollIntervall;
 	wdsnbp.RetryCount = Config.TFTPRetryCount;
 	wdsnbp.RequestID = Server.RequestID;
@@ -44,7 +38,7 @@ int main(int argc, char* argv[])
 	wdsnbp.VersionQuery = Config.VersionQuery;
 
 	Config.DHCPReqDetection = SETTINGS_DEFAULT_DHCPMODE;
-	
+
 	if (Config.AllowUnknownClients == 1)
 		Config.NeedsApproval = 0;
 	else

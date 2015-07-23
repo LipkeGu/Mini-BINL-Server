@@ -49,7 +49,7 @@ int GetClientRule(const unsigned char* MACb)
 		return 1;
 
 	while (!feof(fil) && found == 0)
-		if (fscanf(fil, "%X-%X-%X-%X-%X-%X | %d | %d | %d\n", 
+		if (fscanf(fil, "%X-%X-%X-%X-%X-%X | %d | %d | %d\n",
 			&MACa[0], &MACa[1], &MACa[2], &MACa[3], &MACa[4], &MACa[5], &Action, &Mode, &Prompt) > 3)
 		{
 			for (i = 0; i < 6; i++)
@@ -95,11 +95,11 @@ int GetClientRule(const unsigned char* MACb)
 			Client.PXEPrompt = WDSBP_OPTVAL_PXE_PROMPT_NOPROMPT;
 			break;
 		default:
-                    if (Config.AllowUnknownClients == 1)
-                    	Client.PXEPrompt = WDSBP_OPTVAL_PXE_PROMPT_OPTIN;
-                    else
-                        Client.PXEPrompt = WDSBP_OPTVAL_PXE_PROMPT_OPTOUT;
-                    break;
+			if (Config.AllowUnknownClients == 1)
+				Client.PXEPrompt = WDSBP_OPTVAL_PXE_PROMPT_OPTIN;
+			else
+				Client.PXEPrompt = WDSBP_OPTVAL_PXE_PROMPT_OPTOUT;
+			break;
 		}
 
 		switch (Action)
@@ -134,9 +134,9 @@ int GetClientRule(const unsigned char* MACb)
 
 int GetServerSettings()
 {
-        Server.RequestID = 1;
-        
-        Config.DropUnkownClients = 1;
+	Server.RequestID = 1;
+
+	Config.DropUnkownClients = 1;
 	Config.DefaultAction = WDSBP_OPTVAL_ACTION_ABORT;
 	Config.AllowUnknownClients = SETTINGS_DEFAULT_ALLOWUNKCLIENTS;
 	Config.DefaultMode = SETTINGS_DEFAULT_WDSMODE;
@@ -145,12 +145,12 @@ int GetServerSettings()
 	Config.TFTPRetryCount = SETTINGS_DEFAULT_RETRYCOUNT;
 	Config.ShowClientRequests = SETTINGS_DEFAULT_SHOWREQS;
 	Config.PXEClientPrompt = SETTINGS_DEFAULT_CLIENTPROMPT;
-        
-        FILE *fil = fopen(WDS_SETTINGS_FILE, "r");
+
+	FILE *fil = fopen(WDS_SETTINGS_FILE, "r");
 
 	if (fil != NULL)
 	{
-                while (!feof(fil))
+		while (!feof(fil))
 		{
 			fscanf(fil, "CurrentIDs: %lu\n", &wdsnbp.RequestID);
 			fscanf(fil, "PollIntervall: %d\n", &Config.PollIntervall);
@@ -161,7 +161,7 @@ int GetServerSettings()
 			fscanf(fil, "DefaultAction: %d\n", &Config.DefaultAction);
 			fscanf(fil, "DefaultMode: %d\n", &Config.DefaultMode);
 			fscanf(fil, "PXEClientPrompt: %d\n", &Config.PXEClientPrompt);
-                        fscanf(fil, "AllowServerSelection: %d\n", &Config.AllowServerSelection);
+			fscanf(fil, "AllowServerSelection: %d\n", &Config.AllowServerSelection);
 		}
 
 		if (fclose(fil) == 0)

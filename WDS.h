@@ -189,7 +189,7 @@ struct wdsparams
 
 	unsigned long RequestID;
 	unsigned long ServerVersion;
-	
+
 	short RetryCount;
 	short PollIntervall;
 } wdsnbp;

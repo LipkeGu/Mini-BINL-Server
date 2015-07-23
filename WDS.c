@@ -57,7 +57,7 @@ void logger(char* text)
 
 	closelog();
 #else
-        printf("%s", text);
+	printf("%s", text);
 #endif
 #else
 	printf("%s", text);
@@ -210,7 +210,7 @@ int setDHCPRespType(int found, int mode)
 	else
 		if (Client.lastDHCPType == 3)
 			if (Client.isWDSRequest == 1)
-                                return DHCPACK;
+				return DHCPACK;
 			else
 				return DHCPOFFER;
 		else
@@ -220,8 +220,8 @@ int setDHCPRespType(int found, int mode)
 int isZeroIP(char* IP)
 {
 	char ZeroIP[4] = { 0x00, 0x00, 0x00, 0x00 };
-        
-        if (memcmp(IP, ZeroIP, IPV4_ADDR_LENGTH) == 0)
+
+	if (memcmp(IP, ZeroIP, IPV4_ADDR_LENGTH) == 0)
 		return 0;
 	else
 		return 1;
@@ -232,11 +232,11 @@ int FindVendorOpt(const char* Buffer, size_t buflen)
 	size_t i = 240;
 
 	for (i; i < buflen; i = i + 9)
-            if ( i < buflen)
-                if (memcmp(VENDORIDENT, &Buffer[i], 9) == 0)
-                    return 0;
+		if (i < buflen)
+			if (memcmp(VENDORIDENT, &Buffer[i], 9) == 0)
+				return 0;
 
-        return 1;
+	return 1;
 }
 
 int isValidDHCPType(int type)
