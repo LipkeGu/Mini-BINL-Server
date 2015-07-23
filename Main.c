@@ -22,36 +22,35 @@ int main(int argc, char* argv[])
 {
 	Config.BOOTPPort = 4011;
 	Config.DHCPPort = 67;
+	
+	Config.ReferalIP = (unsigned long)0;
+	Config.RouterIP = (unsigned long)0;
 
-	Config.DefaultAction = WDSBP_OPTVAL_ACTION_ABORT;
 	sprintf(Server.dnsdomain, "%s", WDS_DEFUALT_DOMAIN);
-	Config.PXEClientPrompt = WDSBP_OPTVAL_PXE_PROMPT_OPTOUT;
+
+	wdsnbp.ActionDone = 0;
+	wdsnbp.NextAction = WDSBP_OPTVAL_ACTION_APPROVAL;
 
 	if (GetServerSettings() == 1)
 	{
-		Server.RequestID = 7;
-
-		Config.AllowUnknownClients = 0;
-		Config.DefaultMode = WDS_MODE_WDS;
-		Config.VersionQuery = 0;
-		Config.PollIntervall = 2;
-		Config.TFTPRetryCount = 5;
-		Config.ShowClientRequests = 1;
-		Config.DHCPReqDetection = 1;
-		Config.ShowClientRequests = 1;
-		Config.PXEClientPrompt = 1;
+		
 	}
 
-	Client.ActionDone = 0;
-	Client.Action = WDSBP_OPTVAL_ACTION_APPROVAL;
-	Client.inDHCPMode = 1;
+	wdsnbp.PollIntervall = Config.PollIntervall;
+	wdsnbp.RetryCount = Config.TFTPRetryCount;
+	wdsnbp.RequestID = Server.RequestID;
+	wdsnbp.PXEClientPrompt = Config.PXEClientPrompt;
+	wdsnbp.PXEPromptDone = Config.PXEClientPrompt;
+	wdsnbp.VersionQuery = Config.VersionQuery;
 
+	Config.DHCPReqDetection = SETTINGS_DEFAULT_DHCPMODE;
+	
 	if (Config.AllowUnknownClients == 1)
 		Config.NeedsApproval = 0;
 	else
 		Config.NeedsApproval = 1;
 
-	sprintf(Config.server_root, "%s", replace_str("#mnt#reminst", "#", DS));
+	sprintf(Config.server_root, "%s", replace_str(WDS_SERVER_ROOT, "#", DS));
 
 	handle_args(argc, argv);
 

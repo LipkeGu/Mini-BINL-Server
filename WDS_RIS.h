@@ -24,6 +24,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define RIS_DRIVER_OFFSET_DEVID		26
 
 #define PKT_NCQ                         0x51434e81	/* Network Card Query */
+#define NCR_OK                          0x00000000	/* OK */
+#define NCR_KO                          0xc000000d	/* NOT FOUND! */
+#define PKT_NCR                         0x52434e82	/* Network Card Reply */
 
 typedef struct _DRIVER
 {

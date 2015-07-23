@@ -21,19 +21,28 @@ int GetClientinfo(int arch, unsigned char* hwadr, int found)
 {
 	if (found == 1)
 	{
-		Config.PXEClientPrompt = WDSBP_OPTVAL_PXE_PROMPT_OPTOUT;
+            if (Config.ShowClientRequests == 1)
+            {    if (Client.WDSMode == WDS_MODE_WDS)
+                    sprintf(logbuffer, "============== WDS Client ==============\n");
+		else
+                    if (Client.WDSMode == WDS_MODE_RIS)
+                        sprintf(logbuffer, "============== RIS Client ==============\n");
+                    else
+                        if (Client.WDSMode == WDS_MODE_UNK)
+                            sprintf(logbuffer, "============== PXE Client ==============\n");
+		
+                logger(logbuffer);
 
-		sprintf(logbuffer, "============== WDS Client ==============\n");
-		logger(logbuffer);
-
-		sprintf(logbuffer, "MAC: %02X:%02X:%02X:%02X:%02X:%02X\n",
-			hwadr[0], hwadr[1], hwadr[2], hwadr[3], hwadr[4], hwadr[5]);
+		sprintf(logbuffer, "MAC: %02X:%02X:%02X:%02X:%02X:%02X\n", hwadr[0], hwadr[1], hwadr[2], hwadr[3], hwadr[4], hwadr[5]);
 		logger(logbuffer);
 
 		sprintf(logbuffer, "CLIENT IP: %s\n", inet_ntoa(from.sin_addr));
 		logger(logbuffer);
 
-		switch (Client.Action)
+                sprintf(logbuffer, "REQUEST ID: %lu\n", wdsnbp.RequestID);
+		logger(logbuffer);
+                
+		switch (wdsnbp.NextAction)
 		{
 		case WDSBP_OPTVAL_ACTION_ABORT:
 			sprintf(logbuffer, "ACTION: Abort\n");
@@ -63,7 +72,7 @@ int GetClientinfo(int arch, unsigned char* hwadr, int found)
 			sprintf(logbuffer, "MODE: PXELinux\n");
 			break;
 		default:
-			sprintf(logbuffer, "MODE: Unknown\n");
+			sprintf(logbuffer, "MODE: DROP\n");
 			break;
 		}
 
@@ -81,22 +90,26 @@ int GetClientinfo(int arch, unsigned char* hwadr, int found)
 			sprintf(logbuffer, "PROMPT: NOPROMPT\n");
 			break;
 		default:
+                    	sprintf(logbuffer, "PROMPT: UNKNOWN\n");
 			break;
 		}
 
 		logger(logbuffer);
+            }
+		
+            switch (arch)
+            {
+                case SYSARCH_INTEL_X86:
+                    if (Config.ShowClientRequests == 1)
+                    { if (Client.ClientArch != arch)
+                            sprintf(logbuffer, "ARCH: x86 (DHCP reports %d!)\n", Client.ClientArch);
+                        else
+                            sprintf(logbuffer, "ARCH: x86\n");
 
-		switch (arch)
-		{
-		case SYSARCH_INTEL_X86:
-			if (Client.ClientArch != arch)
-				sprintf(logbuffer, "ARCH: x86 (DHCP reports %d!)\n", Client.ClientArch);
-			else
-				sprintf(logbuffer, "ARCH: x86\n");
-
-			logger(logbuffer);
-
-			if (Client.Action != WDSBP_OPTVAL_ACTION_ABORT)
+                        logger(logbuffer);
+                    }
+                    
+                    if (wdsnbp.NextAction != WDSBP_OPTVAL_ACTION_ABORT)
 				if (Client.WDSMode == WDS_MODE_WDS)
 				{
 					sprintf(Client.Bootfile, WDS_BOOTFILE_X86);
@@ -114,25 +127,44 @@ int GetClientinfo(int arch, unsigned char* hwadr, int found)
 			}
 
 			Client.WDSMode = WDS_MODE_WDS;
+                        
 			break;
 		case SYSARCH_INTEL_IA64:
-			if (Client.ClientArch != arch)
+			if (Config.ShowClientRequests == 1)
+                        {
+                            if (Client.ClientArch != arch)
 				sprintf(logbuffer, "ARCH: IA64 (DHCP reports %d!)\n", Client.ClientArch);
-			else
+                            else
 				sprintf(logbuffer, "ARCH: IA64\n");
 
-			logger(logbuffer);
+                            logger(logbuffer);
+                        }
+                        
+			if (wdsnbp.NextAction != WDSBP_OPTVAL_ACTION_ABORT)
+			{
+				sprintf(Client.Bootfile, WDS_BOOTFILE_EFI);
+				sprintf(Client.BCDPath, WDS_BOOTSTORE_EFI);
+			}
+			else
+			{
+				sprintf(Client.Bootfile, WDS_ABORT_BOOTFILE_EFI);
+				sprintf(Client.BCDPath, WDS_BOOTSTORE_EFI);
+			}
+
 			Client.WDSMode = WDS_MODE_WDS;
 			break;
 		case SYSARCH_INTEL_X64:
-			if (Client.ClientArch != arch)
+			if (Config.ShowClientRequests == 1)
+                        {
+                            if (Client.ClientArch != arch)
 				sprintf(logbuffer, "ARCH: x64 (DHCP reports %d!)\n", Client.ClientArch);
-			else
+                            else
 				sprintf(logbuffer, "ARCH: x64\n");
 
-			logger(logbuffer);
-
-			if (Client.Action != WDSBP_OPTVAL_ACTION_ABORT)
+                            logger(logbuffer);
+                        }
+                        
+			if (wdsnbp.NextAction != WDSBP_OPTVAL_ACTION_ABORT)
 			{
 				sprintf(Client.Bootfile, WDS_BOOTFILE_X64);
 				sprintf(Client.BCDPath, WDS_BOOTSTORE_X64);
@@ -146,14 +178,17 @@ int GetClientinfo(int arch, unsigned char* hwadr, int found)
 			Client.WDSMode = WDS_MODE_WDS;
 			break;
 		case SYSARCH_INTEL_EFI:
-			if (Client.ClientArch != arch)
+			if (Config.ShowClientRequests == 1)
+                        {
+                            if (Client.ClientArch != arch)
 				sprintf(logbuffer, "ARCH: x64 EFI (DHCP reports %d!)\n", Client.ClientArch);
-			else
+                            else
 				sprintf(logbuffer, "ARCH: x64 EFI\n");
-
-			logger(logbuffer);
-
-			if (Client.Action != WDSBP_OPTVAL_ACTION_ABORT)
+                        
+                            logger(logbuffer);
+                        }
+                        
+			if (wdsnbp.NextAction != WDSBP_OPTVAL_ACTION_ABORT)
 			{
 				sprintf(Client.Bootfile, WDS_BOOTFILE_EFI);
 				sprintf(Client.BCDPath, WDS_BOOTSTORE_EFI);
@@ -167,49 +202,59 @@ int GetClientinfo(int arch, unsigned char* hwadr, int found)
 			Client.WDSMode = WDS_MODE_WDS;
 			break;
 		default:
-			break;
+			if (wdsnbp.NextAction != WDSBP_OPTVAL_ACTION_ABORT)
+			{
+				sprintf(Client.Bootfile, WDS_BOOTFILE_UNKNOWN);
+				sprintf(Client.BCDPath, WDS_BOOTSTORE_X86);
+			}
+			else
+			{
+				sprintf(Client.Bootfile, WDS_ABORT_BOOTFILE_X86);
+				sprintf(Client.BCDPath, WDS_BOOTSTORE_X86);
+			}
+
+			Client.WDSMode = WDS_MODE_WDS;
+                        break;
 		}
 
-		Server.RequestID = Server.RequestID + 1;
+                if (Config.ShowClientRequests == 1)
+                {    
+                    sprintf(logbuffer, "FILE: %s\n", Client.Bootfile);
+                    logger(logbuffer);
+                
+                    if (Client.WDSMode == WDS_MODE_WDS)
+                    {
+                        sprintf(logbuffer, "BCD: %s\n", Client.BCDPath);
+                        logger(logbuffer);
+                    }
+                }
+            
+		wdsnbp.RequestID = wdsnbp.RequestID + 1;
 
-		if (Server.RequestID == 99)
-			Server.RequestID = 1;
+		if (wdsnbp.RequestID == 200)
+			wdsnbp.RequestID = 1;
 
-		Client.ActionDone = 1;
-		return 1;
+                wdsnbp.PXEPromptDone = 1;
+		wdsnbp.ActionDone = 1;
+		
+                return 1;
 	}
 	else
-	{
-		if (Config.AllowUnknownClients == 0 && Config.ShowClientRequests == 1)
-		{
-			sprintf(logbuffer, "======== WDS (Request #%d) ========\n", Server.RequestID);
-			logger(logbuffer);
-
-			sprintf(logbuffer, "MAC: %02X:%02X:%02X:%02X:%02X:%02X\n",
-				hwadr[0], hwadr[1], hwadr[2], hwadr[3], hwadr[4], hwadr[5]);
-			logger(logbuffer);
-
-			sprintf(logbuffer, "===================================\n");
-			logger(logbuffer);
-		}
-
 		return 0;
-	}
 }
 
 int Handle_DHCP_Request(int con, char* Data, int found, saddr* socket, int mode)
 {
-	char ZeroIP[4] = { 0x00, 0x00, 0x00, 0x00 };
+        socket = socket;
+    
+        char ZeroIP[4] = { 0x00, 0x00, 0x00, 0x00 };
 	char Bootreply[1] = { BOOTP_REPLY };
-	char DHCP_ACK[3] = { 0x35, 0x01, setDHCPRespType(found) };
-	char Vendoropt[2] = { 0x3C, 0x09 };
+	char DHCP_ACK[3] = { 0x35, 0x01, setDHCPRespType(found, mode) };
+	char Vendoropt[2] = { 0x3C, strlen(VENDORIDENT) };
 	char DHCPEnd[1] = { 0xff };
 	char idtopt[2] = { 0x36, 0x04 };
 	char Rtropt[2] = { 0x03, IPV4_ADDR_LENGTH };
 	char netopt[2] = { 0x01, IPV4_ADDR_LENGTH };
-	
-	uint32_t i = 0;
-
 
 	if (memcmp(&Data[BOOTP_OFFSET_CLIENTIP], ZeroIP, IPV4_ADDR_LENGTH) != 0 &&
 		memcmp(&Data[BOOTP_OFFSET_NEXTSERVER], ZeroIP, IPV4_ADDR_LENGTH) == 0)
@@ -273,7 +318,7 @@ int Handle_DHCP_Request(int con, char* Data, int found, saddr* socket, int mode)
 	memcpy(&RESPData[RESPsize], Server.nbname, sizeof(Server.nbname));
 	Set_Size(sizeof(Server.nbname));
 
-	if (Client.isWDSRequest == 0)
+	if (mode == 1)
 		sprintf(Client.Bootfile, DHCP_BOOTFILE);
 
 	memcpy(&RESPData[RESPsize], Client.Bootfile, sizeof(Client.Bootfile));
@@ -298,16 +343,14 @@ int Handle_DHCP_Request(int con, char* Data, int found, saddr* socket, int mode)
 	memcpy(&RESPData[RESPsize], Vendoropt, 2);
 	Set_Size(2);
 
-	sprintf(&RESPData[RESPsize], "PXEClient");
+	sprintf(&RESPData[RESPsize], VENDORIDENT);
 	Set_Size(9);
 
-	/* Send option 1 & 3 only when we have an WDS request... otherwise it is
-	 * already done by the provided dhcp service! */
+	/* Send option 1 & 3 only when we have an WDS request... */
 
 	if (Client.isWDSRequest == 1)
 	{
 		/* Option Netmask (1) */
-
 		memcpy(&RESPData[RESPsize], netopt, sizeof(netopt));
 		Set_Size(sizeof(netopt));
 
@@ -336,27 +379,30 @@ int Handle_DHCP_Request(int con, char* Data, int found, saddr* socket, int mode)
 			Set_Size(strlen(Client.BCDPath));
 		}
 
-		sprintf(logbuffer, "========================================\n");
-		logger(logbuffer);
-	}
+                if (Config.ShowClientRequests == 1)
+                {
+                    sprintf(logbuffer, "========================================\n");
+                    logger(logbuffer);
+                }
+        }
 	else
 	{
 		/* WDSNBP related informations */
-		if (Client.ActionDone == 0)
-			Client.Action = WDSBP_OPTVAL_ACTION_APPROVAL;
+		if (wdsnbp.ActionDone == 0)
+			wdsnbp.NextAction = WDSBP_OPTVAL_ACTION_APPROVAL;
 
 		if (Config.AllowUnknownClients == 0)
 		{
 			/* TODO Assign types instead of hardcoding! */
 			char aprovalmsg[29] = {
-				WDSBP_OPT_NEXT_ACTION, 0x01, Client.Action,
-				WDSBP_OPT_REQUEST_ID, 0x04, 0x00, 0x00, 0x00, Server.RequestID,
-				WDSBP_OPT_POLL_INTERVAL, 0x02, 0x00, Config.PollIntervall,
-				WDSBP_OPT_POLL_RETRY_COUNT, 0x02, 0x00, Config.TFTPRetryCount,
-				WDSBP_OPT_ACTION_DONE, 0x01, Client.ActionDone,
-				WDSBP_OPT_VERSION_QUERY, 0x01, Config.VersionQuery,
-				WDSBP_OPT_PXE_CLIENT_PROMPT, 0x01, Client.PXEPrompt,
-				WDSBP_OPT_PXE_PROMPT_DONE, 0x01, Client.PXEPrompt };
+				WDSBP_OPT_NEXT_ACTION, 0x01, wdsnbp.NextAction,
+				WDSBP_OPT_REQUEST_ID, 0x04, 0x00, 0x00, 0x00, wdsnbp.RequestID,
+				WDSBP_OPT_POLL_INTERVAL, 0x02, 0x00, wdsnbp.PollIntervall,
+				WDSBP_OPT_POLL_RETRY_COUNT, 0x02, 0x00, wdsnbp.RetryCount,
+				WDSBP_OPT_ACTION_DONE, 0x01, wdsnbp.ActionDone,
+				WDSBP_OPT_VERSION_QUERY, 0x01, wdsnbp.VersionQuery,
+				WDSBP_OPT_PXE_CLIENT_PROMPT, 0x01, wdsnbp.PXEClientPrompt,
+				WDSBP_OPT_PXE_PROMPT_DONE, 0x01, wdsnbp.PXEPromptDone };
 
 			char admopt[2] = { 0xfa, sizeof(aprovalmsg) };
 
@@ -365,7 +411,6 @@ int Handle_DHCP_Request(int con, char* Data, int found, saddr* socket, int mode)
 
 			memcpy(&RESPData[RESPsize], aprovalmsg, sizeof(aprovalmsg));
 			Set_Size(sizeof(aprovalmsg));
-
 		}
 	}
 
@@ -373,8 +418,10 @@ int Handle_DHCP_Request(int con, char* Data, int found, saddr* socket, int mode)
 	memcpy(&RESPData[RESPsize], DHCPEnd, sizeof(DHCPEnd));
 	Set_Size(sizeof(DHCPEnd));
 
-	if (Client.inDHCPMode == 0)
-		return WDS_Send(con, RESPData, RESPsize, NULL, mode);
+	/* TODO: increase packet to MTU size - 30 ?!?!?!? */
+
+	if (mode == 0)
+		return WDS_Send(con, RESPData, RESPsize, socket, mode);
 	else
-		return DHCP_Send(con, RESPData, RESPsize, NULL, mode);
+		return DHCP_Send(con, RESPData, RESPsize, socket, mode);
 }

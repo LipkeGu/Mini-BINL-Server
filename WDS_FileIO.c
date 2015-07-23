@@ -95,20 +95,23 @@ int GetClientRule(const unsigned char* MACb)
 			Client.PXEPrompt = WDSBP_OPTVAL_PXE_PROMPT_NOPROMPT;
 			break;
 		default:
-			Client.PXEPrompt = Config.PXEClientPrompt;
-			break;
+                    if (Config.AllowUnknownClients == 1)
+                    	Client.PXEPrompt = WDSBP_OPTVAL_PXE_PROMPT_OPTIN;
+                    else
+                        Client.PXEPrompt = WDSBP_OPTVAL_PXE_PROMPT_OPTOUT;
+                    break;
 		}
 
 		switch (Action)
 		{
 		case 1:
-			Client.Action = WDSBP_OPTVAL_ACTION_APPROVAL;
+			wdsnbp.NextAction = WDSBP_OPTVAL_ACTION_APPROVAL;
 			break;
 		case 3:
-			Client.Action = WDSBP_OPTVAL_ACTION_REFERRAL;
+			wdsnbp.NextAction = WDSBP_OPTVAL_ACTION_REFERRAL;
 			break;
 		case 5:
-			Client.Action = WDSBP_OPTVAL_ACTION_ABORT;
+			wdsnbp.NextAction = WDSBP_OPTVAL_ACTION_ABORT;
 			break;
 		default:
 			Client.WDSMode = Config.DefaultAction;
@@ -121,7 +124,7 @@ int GetClientRule(const unsigned char* MACb)
 		if (Config.AllowUnknownClients == 1)
 		{
 			Client.WDSMode = WDS_MODE_WDS;
-			Client.Action = WDSBP_OPTVAL_ACTION_APPROVAL;
+			wdsnbp.NextAction = WDSBP_OPTVAL_ACTION_APPROVAL;
 
 			return 1;
 		}
@@ -129,16 +132,27 @@ int GetClientRule(const unsigned char* MACb)
 			return 0;
 }
 
-
 int GetServerSettings()
 {
-	FILE *fil = fopen(WDS_SETTINGS_FILE, "r");
+        Server.RequestID = 1;
+        
+        Config.DropUnkownClients = 1;
+	Config.DefaultAction = WDSBP_OPTVAL_ACTION_ABORT;
+	Config.AllowUnknownClients = SETTINGS_DEFAULT_ALLOWUNKCLIENTS;
+	Config.DefaultMode = SETTINGS_DEFAULT_WDSMODE;
+	Config.VersionQuery = SETTINGS_DEFAULT_VERSIONQUERY;
+	Config.PollIntervall = SETTINGS_DEFAULT_POLLINTERVALL;
+	Config.TFTPRetryCount = SETTINGS_DEFAULT_RETRYCOUNT;
+	Config.ShowClientRequests = SETTINGS_DEFAULT_SHOWREQS;
+	Config.PXEClientPrompt = SETTINGS_DEFAULT_CLIENTPROMPT;
+        
+        FILE *fil = fopen(WDS_SETTINGS_FILE, "r");
 
 	if (fil != NULL)
 	{
-		while (!feof(fil))
+                while (!feof(fil))
 		{
-			fscanf(fil, "CurrentIDs: %d\n", &Server.RequestID);
+			fscanf(fil, "CurrentIDs: %lu\n", &wdsnbp.RequestID);
 			fscanf(fil, "PollIntervall: %d\n", &Config.PollIntervall);
 			fscanf(fil, "TFTPRetryCount: %d\n", &Config.TFTPRetryCount);
 			fscanf(fil, "AllowUnknownClients: %d\n", &Config.AllowUnknownClients);
@@ -147,7 +161,7 @@ int GetServerSettings()
 			fscanf(fil, "DefaultAction: %d\n", &Config.DefaultAction);
 			fscanf(fil, "DefaultMode: %d\n", &Config.DefaultMode);
 			fscanf(fil, "PXEClientPrompt: %d\n", &Config.PXEClientPrompt);
-
+                        fscanf(fil, "AllowServerSelection: %d\n", &Config.AllowServerSelection);
 		}
 
 		if (fclose(fil) == 0)

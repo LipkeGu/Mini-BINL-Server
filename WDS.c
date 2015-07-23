@@ -51,11 +51,14 @@ void Set_PKTLength()
 void logger(char* text)
 {
 #ifndef _WIN32
-	openlog("BINLSvc", LOG_CONS | LOG_PID, LOG_USER);
+#if DEBUGMODE == 0
+	openlog("WDSServer", LOG_CONS | LOG_PID, LOG_USER);
 	syslog(LOG_INFO, "%s", text);
 
 	closelog();
-
+#else
+        printf("%s", text);
+#endif
 #else
 	printf("%s", text);
 #endif
@@ -77,8 +80,23 @@ void handle_args(int data_len, char* Data[])
 	if (data_len > 1)
 		for (i = 0; i < data_len; i++)
 		{
-			if (memcmp(Data[i], "-datadir", 8) == 0) /* root Directory */
-				sprintf(Config.server_root, "%s", Data[(i + 1)]);
+			if (memcmp(Data[i], "-rootdir", 8) == 0) /* root Directory */
+				sprintf(Config.server_root, "%s", replace_str(Data[(i + 1)], "#", DS));
+
+			if (memcmp(Data[i], "-bserv", 6) == 0) /* Referal Server */
+				Config.ReferalIP = IP2Bytes(Data[(i + 1)]);
+
+			if (memcmp(Data[i], "-router", 7) == 0) /* Gateway */
+				Config.RouterIP = IP2Bytes(Data[(i + 1)]);
+
+			if (memcmp(Data[i], "-srvip", 6) == 0) /* THIS Server IP */
+				Config.ServerIP = IP2Bytes(Data[(i + 1)]);
+
+			if (memcmp(Data[i], "-nbname", 7) == 0) /* Server Hostname */
+				sprintf(Server.nbname, "%s", Data[(i + 1)]);
+
+			if (memcmp(Data[i], "-dnsdom", 7) == 0) /* FQDN Domainname */
+				sprintf(Server.dnsdomain, "%s", Data[(i + 1)]);
 		}
 }
 
@@ -185,22 +203,40 @@ uint32_t IP2Bytes(const char* IP_address)
 	return ipvalue.s_addr;
 }
 
-int setDHCPRespType(int found)
+int setDHCPRespType(int found, int mode)
 {
-	if (Client.inDHCPMode == 1)
+	if (mode == 1)
 		return DHCPOFFER;
 	else
-		return DHCPACK;
+		if (Client.lastDHCPType == 3)
+			if (Client.isWDSRequest == 1)
+                                return DHCPACK;
+			else
+				return DHCPOFFER;
+		else
+			return DHCPOFFER;
 }
 
 int isZeroIP(char* IP)
 {
 	char ZeroIP[4] = { 0x00, 0x00, 0x00, 0x00 };
-
-	if (memcmp(IP, ZeroIP, 4) == 0)
+        
+        if (memcmp(IP, ZeroIP, IPV4_ADDR_LENGTH) == 0)
 		return 0;
 	else
 		return 1;
+}
+
+int FindVendorOpt(const char* Buffer, size_t buflen)
+{
+	size_t i = 240;
+
+	for (i; i < buflen; i = i + 9)
+            if ( i < buflen)
+                if (memcmp(VENDORIDENT, &Buffer[i], 9) == 0)
+                    return 0;
+
+        return 1;
 }
 
 int isValidDHCPType(int type)
@@ -249,3 +285,5 @@ int isValidDHCPType(int type)
 
 	return result;
 }
+
+

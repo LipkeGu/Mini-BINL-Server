@@ -19,21 +19,21 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define WDS_PACKET_H_
 
 #define DHCP_MAGIC_COOKIE                   (0x63825363)
-#define DHCP_MINIMAL_PACKET_SIZE			240
+#define DHCP_MINIMAL_PACKET_SIZE            240
 
-#define BOOTP_REQUEST						1
-#define BOOTP_REPLY							2
+#define BOOTP_REQUEST                       1
+#define BOOTP_REPLY                         2
 
-#define DHCPDISCOVER						1
-#define DHCPOFFER							2
-#define DHCPREQUEST							3
-#define DHCPDECLINE							4
-#define DHCPACK								5
-#define DHCPNAK								6
-#define DHCPRELEASE							7
-#define DHCPINFORM							8
+#define DHCPDISCOVER                        1
+#define DHCPOFFER                           2
+#define DHCPREQUEST                         3
+#define DHCPDECLINE                         4
+#define DHCPACK                             5
+#define DHCPNAK                             6
+#define DHCPRELEASE                         7
+#define DHCPINFORM                          8
 
-#define WDSNBP_OPTION						250
+#define WDSNBP_OPTION                       250
 #define IPV4_ADDR_LENGTH                    4
 
 #define WDSBP_OPT_ARCHITECTURE              1
@@ -51,27 +51,27 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define WDSBP_OPT_ACTION_DONE               14
 #define WDSBP_OPT_ALLOW_SERVER_SELECTION    15
 #define WDSBP_OPT_SERVER_FEATURES           16
-#define WDSBP_OPT_END						255
+#define WDSBP_OPT_END                       255
 
 //
 // Bootfiles
 //
 
-#define DHCP_BOOTFILE			"wdsnbp.0"
-#define WDS_BOOTFILE_X86		"\\Boot\\x86\\pxeboot.n12"
-#define WDS_BOOTFILE_X64		"\\Boot\\x64\\pxeboot.n12"
-#define WDS_BOOTFILE_EFI		"\\Boot\\EFI\\bootmgfw.efi"
-#define RIS_BOOTFILE_DEFAULT	"\\Boot\\winxp\\startrom.n12"
-#define WDS_BOOTFILE_UNKNOWN	"\\pxelinux.0"
+#define DHCP_BOOTFILE					"wdsnbp.0"
+#define WDS_BOOTFILE_X86				"\\Boot\\x86\\pxeboot.n12"
+#define WDS_BOOTFILE_X64				"\\Boot\\x64\\pxeboot.n12"
+#define WDS_BOOTFILE_EFI				"\\Boot\\EFI\\bootmgfw.efi"
+#define RIS_BOOTFILE_DEFAULT			"\\Boot\\winxp\\startrom.n12"
+#define WDS_BOOTFILE_UNKNOWN			"\\pxelinux.0"
 
-#define WDS_BOOTSTORE_X86		"\\Boot\\x86\\default.bcd"
-#define WDS_BOOTSTORE_X64		"\\Boot\\x64\\default.bcd"
-#define WDS_BOOTSTORE_EFI		"\\Boot\\EFI\\default.bcd"
-#define WDS_BOOTSTORE_DEFAULT	"\\Boot\\BCD"
+#define WDS_BOOTSTORE_X86				"\\Boot\\x86\\default.bcd"
+#define WDS_BOOTSTORE_X64				"\\Boot\\x64\\default.bcd"
+#define WDS_BOOTSTORE_EFI				"\\Boot\\EFI\\default.bcd"
+#define WDS_BOOTSTORE_DEFAULT			"\\Boot\\BCD"
 
-#define WDS_ABORT_BOOTFILE_X86	"\\Boot\\x86\\abortpxe.com"
-#define WDS_ABORT_BOOTFILE_X64	"\\Boot\\x64\\abortpxe.com"
-#define WDS_ABORT_BOOTFILE_EFI	"\\Boot\\EFI\\abortpxe.efi"
+#define WDS_ABORT_BOOTFILE_X86			"\\Boot\\x86\\abortpxe.com"
+#define WDS_ABORT_BOOTFILE_X64			"\\Boot\\x64\\abortpxe.com"
+#define WDS_ABORT_BOOTFILE_EFI			"\\Boot\\EFI\\abortpxe.efi"
 
 //
 // Values for WDSBP_OPT_NEXT_ACTION Option.
@@ -80,6 +80,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define WDSBP_OPTVAL_ACTION_APPROVAL		1
 #define WDSBP_OPTVAL_ACTION_REFERRAL		3
 #define WDSBP_OPTVAL_ACTION_ABORT			5
+#define WDSBP_OPTVAL_ACTION_DROP			0
 
 //
 // Values for WDSBP_OPT_PXE_CLIENT_PROMPT and WDSBP_OPT_PXE_PROMPT_DONE.
@@ -97,30 +98,30 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define WDSBP_OPTVAL_NBP_VER_8			0x0800
 
 #define BOOTP_OFFSET_BOOTPTYPE			0
-#define BOOTP_OFFSET_HWTYPE             1
-#define BOOTP_OFFSET_MACLEN             2
-#define BOOTP_OFFSET_HOPS               3
+#define BOOTP_OFFSET_HWTYPE			1
+#define BOOTP_OFFSET_MACLEN			2
+#define BOOTP_OFFSET_HOPS				3
 #define BOOTP_OFFSET_TRANSID			4
 #define BOOTP_OFFSET_SECONDS			8
-#define BOOTP_OFFSET_BOOTPFLAGS			10
-#define BOOTP_OFFSET_YOURIP             12
+#define BOOTP_OFFSET_BOOTPFLAGS		10
+#define BOOTP_OFFSET_YOURIP			12
 #define BOOTP_OFFSET_CLIENTIP			16
-#define BOOTP_OFFSET_NEXTSERVER			20
+#define BOOTP_OFFSET_NEXTSERVER		20
 #define BOOTP_OFFSET_RELAYIP			24
 #define BOOTP_OFFSET_MACADDR			28
-#define BOOTP_OFFSET_MACPADDING			34
+#define BOOTP_OFFSET_MACPADDING		34
 
-#define BOOTP_OFFSET_COOKIE             236
-#define BOOTP_OFFSET_MSGTYPE            242
+#define BOOTP_OFFSET_COOKIE			236
+#define BOOTP_OFFSET_MSGTYPE			242
 #define BOOTP_OFFSET_VENOPTION			245
-#define BOOTP_OFFSET_GUID               254
-#define BOOTP_OFFSET_CARCH              273
-#define BOOTP_OFFSET_WDSNBP             277
+#define BOOTP_OFFSET_GUID				254
+#define BOOTP_OFFSET_CARCH				273
+#define BOOTP_OFFSET_WDSNBP			277
 #define BOOTP_OFFSET_OPTIONS			279		/* WDSNBP */
 #define BOOTP_OFFSET_SYSARCH			289		/* WDSNBP */
 
-#define BOOTP_FLAG_BROADCAST            128
-#define BOOTP_FLAG_UNICAST              0
+#define BOOTP_FLAG_BROADCAST			128
+#define BOOTP_FLAG_UNICAST				0
 
 //
 // Values for NCQ (Driver Query).

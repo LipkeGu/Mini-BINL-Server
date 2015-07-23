@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <time.h>
 #include <ctype.h>
 #include <sys/types.h>
+
 #ifndef _WIN32 
 #include <netdb.h>
 #include <unistd.h>
@@ -60,17 +61,17 @@ static __inline void eol(FILE *fd);
 #define bcopy(b1,b2,len) (memmove((b2), (b1), (len)), (void) 0)
 
 #define HAVEFORKSUPPORT
-#define WDS_MSG_LOOKING_FOR_POLICY	"Server is looking for client policy..."
+#define WDS_MSG_LOOKING_FOR_POLICY				"Server is looking for client policy..."
 
-#define WDS_MODE_RIS			0
-#define WDS_MODE_WDS			1
-#define WDS_MODE_UNK			2
+#define WDS_MODE_RIS							0
+#define WDS_MODE_WDS							1
+#define WDS_MODE_UNK							2
 
-#define DEBUGMODE               0
+#define DEBUGMODE								1
 
 
 #ifndef DS
-#define DS			"/"
+#define DS									"/"
 #endif
 
 #include "WDS_Socket.h"
@@ -78,26 +79,53 @@ static __inline void eol(FILE *fd);
 #include "WDS_FileIO.h"
 #include "WDS_RIS.h"
 
-// #define	ALLOWALLARCHES		1
+// #define	ALLOWALLARCHES					1
+
+#ifndef SETTINGS_DEFAULT_WDSCONFIG
+#define SETTINGS_DEFAULT_ALLOWUNKCLIENTS		0
+#define SETTINGS_DEFAULT_POLLINTERVALL			10		
+#define SETTINGS_DEFAULT_RETRYCOUNT			23
+#define SETTINGS_DEFAULT_SHOWREQS				1
+#define SETTINGS_DEFAULT_DHCPMODE				1
+#define SETTINGS_DEFAULT_VERSIONQUERY			0
+#define SETTINGS_DEFAULT_CLIENTPROMPT			WDSBP_OPTVAL_PXE_PROMPT_OPTOUT
+#define SETTINGS_DEFAULT_WDSMODE				WDS_MODE_WDS
+
+#define SETTINGS_DEFAULT_WDSCONFIG				1
+#endif
+
+#ifndef WDS_SERVER_ROOT
+#define WDS_SERVER_ROOT						"#mnt#reminst"
+#endif
 
 #ifndef WDS_DEFUALT_DOMAIN
-#define WDS_DEFUALT_DOMAIN		"localdomain.local"
+#define WDS_DEFUALT_DOMAIN						"localdomain.local"
+#endif
+
+#ifndef BROADCAST_ADDR
+#define BROADCAST_ADDR						"255.255.255.255"
+#endif
+
+#ifndef VENDORIDENT
+#define VENDORIDENT							"PXEClient"
 #endif
 
 #ifndef WDS_SETTINGS_FILE
-#define WDS_SETTINGS_FILE		"Settings.txt"
+#define WDS_SETTINGS_FILE						"Settings.txt"
 #endif
 
 #ifndef WDS_CLIENTS_FILE
-#define WDS_CLIENTS_FILE		"Clients.txt"
+#define WDS_CLIENTS_FILE						"Clients.txt"
 #endif
 
+#define DHCP_BUFFER_SIZE						1460
+
 #ifndef __LITTLE_ENDIAN
-#define __LITTLE_ENDIAN		1234
+#define __LITTLE_ENDIAN						1234
 #endif
 
 #ifndef __BIG_ENDIAN
-#define __BIG_ENDIAN		4321
+#define __BIG_ENDIAN							4321
 #endif
 
 #ifndef __BYTE_ORDER
@@ -129,6 +157,8 @@ struct server_config
 
 	uint32_t ServerIP;
 	uint32_t SubnetMask;
+	uint32_t ReferalIP;
+	uint32_t RouterIP;
 
 	char server_root[255];
 
@@ -136,13 +166,33 @@ struct server_config
 	int PollIntervall;
 	int TFTPRetryCount;
 	int VersionQuery;
+	int AllowServerSelection;
+	int DropUnkownClients;
 	int AllowUnknownClients;
 	int DefaultAction;
 	int ShowClientRequests;
 	int DefaultMode;
 	int PXEClientPrompt;
 	int DHCPReqDetection;
+
 } Config;
+
+struct wdsparams
+{
+	uint8_t VersionQuery;
+	uint8_t ClientPrompt;
+	uint8_t ActionDone;
+	uint8_t Architecture;
+	uint8_t NextAction;
+	uint8_t PXEPromptDone;
+	uint8_t PXEClientPrompt;
+
+	unsigned long RequestID;
+	unsigned long ServerVersion;
+	
+	short RetryCount;
+	short PollIntervall;
+} wdsnbp;
 
 struct Client_Info
 {
@@ -154,16 +204,12 @@ struct Client_Info
 	char BCDPath[64];
 
 	int ClientArch;
-	int ActionDone;
-	int Action;
 	int Version;
 	int WDSMode;
 	int Handled;
-	int inDHCPMode;
 	int lastDHCPType;
 	int isWDSRequest;
 	int PXEPrompt;
-
 } Client;
 
 struct Server_Info
@@ -190,7 +236,7 @@ unsigned char eop;
 unsigned char get_string(FILE *fd, char* dest, size_t size);
 
 int isValidDHCPType(int type);
-int setDHCPRespType(int found);
+int setDHCPRespType(int found, int mode);
 int isZeroIP(char* IP);
 
 void handle_args(int data_len, char* Data[]);
@@ -201,7 +247,5 @@ void Set_EoP(unsigned char neweop);
 void Set_PKTLength();
 void print_values(int data_len, char* Data[]);
 void ZeroOut(void* Buffer, size_t length);
-
-
 
 #endif /* WDS_H_ */

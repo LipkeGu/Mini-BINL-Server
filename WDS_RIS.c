@@ -44,11 +44,6 @@ static __inline void eol(FILE *fd)
 
 int Handle_NCQ_Request(int con, char* Data, size_t Packetlen)
 {
-
-#define NCR_OK		0x00000000	/* OK */
-#define NCR_KO		0xc000000d	/* NOT FOUND! */
-#define PKT_NCR		0x52434e82	/* Network Card Reply */
-
 	int retval = 1;
 
 	if (Packetlen > 0)
