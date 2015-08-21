@@ -7,3 +7,19 @@ before_install:
 script: make
 language: c
 compiler: gcc
+
+env:
+  global:
+   # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
+   #   via the "travis encrypt" command using the project repo's public key
+   - secure: "T3OBhmHTVA7n/p1RyAPbayfeCeONQ50yBYUfOEo0T8GdrrUUAe9L4ZVp14d4HJwuXqMFZHZd5oGmiuABq9+ycHJfd/CBfSItvJAutmighwI7y1WY6wUEXvU3MK76SpNOkOReozXt6K32jYs25yWXpPTcNyF6iJbinKCXFH4llhY="
+
+addons:
+  coverity_scan:
+    project:
+      name: "LipkeGu/Mini-BINL-Server"
+      description: ""
+    notification_email: lipkegu@gmail.com
+    build_command_prepend: ""
+    build_command: "make"
+    branch_pattern: master
