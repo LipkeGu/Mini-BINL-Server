@@ -18,69 +18,26 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "WDS.h"
 
-int CreateUnicastSocketAndBind(int port, in_addr_t in_addr)
+int CreateSocketandBind(int port, int SocketType, int AddressFamiliy, int Protocol)
 {
 	char enabled[1] = { 0x01 };
-	int sockfd = SOCKET_ERROR;
-
-	sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-
-	if (sockfd == SOCKET_ERROR)
-		sockfd = SOCKET_ERROR;
-	else
-	{
-		if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, enabled, sizeof(int)) == 0 &&
-			setsockopt(sockfd, SOL_SOCKET, SO_BROADCAST, enabled, sizeof(int)) == 0)
-		{
-			memset(&from, 0, sizeof(from));
-			memset(&Userv_addr, 0, sizeof(Userv_addr));
-
-			Userv_addr.sin_family = AF_INET;
-			Userv_addr.sin_addr.s_addr = in_addr;
-			Userv_addr.sin_port = htons(port);
-
-			if (bind(sockfd, (struct sockaddr*)&Userv_addr, sizeof(Userv_addr)) < 0)
-			{
-				sprintf(logbuffer, "[E] Cant open BOOTP socket: (Error: %s)\n", strerror(errno));
-				logger(logbuffer);
-
-				sockfd = SOCKET_ERROR;
-			}
-		}
-		else
-		{
-			sprintf(logbuffer, "[E] Unable to set socket options: (Error: %s)\n", strerror(errno));
-			logger(logbuffer);
-
-			sockfd = SOCKET_ERROR;
-		}
-	}
-
-	return sockfd;
-}
-
-int CreateBroadCastSocketAndBind(int port, in_addr_t in_addr)
-{
-	char enabled[1] = { 0x01 };
-	int sockfd = SOCKET_ERROR;
-
-	sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+	int sockfd = socket(AddressFamiliy, SocketType, Protocol);
+	struct sockaddr_in _lsock;
 
 	if (sockfd != SOCKET_ERROR)
 	{
 		if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, enabled, sizeof(int)) == 0 &&
 			setsockopt(sockfd, SOL_SOCKET, SO_BROADCAST, enabled, sizeof(int)) == 0)
 		{
-			memset(&Bserv_addr, 0, sizeof(Bserv_addr));
-			memset(&bfrom, 0, sizeof(bfrom));
+			memset(&_lsock, 0, sizeof(_lsock));
+			
+			_lsock.sin_family = AF_INET;
+			_lsock.sin_addr.s_addr = INADDR_ANY;
+			_lsock.sin_port = htons(port);
 
-			Bserv_addr.sin_family = AF_INET;
-			Bserv_addr.sin_addr.s_addr = in_addr;
-			Bserv_addr.sin_port = htons(port);
-
-			if (bind(sockfd, (struct sockaddr*)&Bserv_addr, sizeof(Bserv_addr)) < 0)
+			if (bind(sockfd, (struct sockaddr*)&_lsock, sizeof(_lsock)) < 0)
 			{
-				sprintf(logbuffer, "[E] Cant open DHCP Socket: (Error: %s)\n", strerror(errno));
+				sprintf(logbuffer, "[E] Bind(): Cant bind to Socket on port %d: (Error: %s)\n", port, strerror(errno));
 				logger(logbuffer);
 
 				sockfd = SOCKET_ERROR;
@@ -88,97 +45,118 @@ int CreateBroadCastSocketAndBind(int port, in_addr_t in_addr)
 		}
 		else
 		{
-			sprintf(logbuffer, "[E] Unable to set socket options: (Error: %s)\n", strerror(errno));
+			sprintf(logbuffer, "[E] SetSockOpt(): Unable to Option for socket on port %d: (Error: %s)\n", port, strerror(errno));
 			logger(logbuffer);
 
 			sockfd = SOCKET_ERROR;
 		}
 	}
+	else
+	{
+		sprintf(logbuffer, "[E] Socket(): Unable to create socket option for port %d: (Error: %s)\n", port, strerror(errno));
+		logger(logbuffer);
+
+		sockfd = SOCKET_ERROR;
+	}
 
 	return sockfd;
 }
 
+#ifdef _WIN32
+	DWORD WINAPI DHCP_Thread()
+#else
+	void DHCP_Thread()
+#endif
+{
+	memset(&bfrom, 0, sizeof(bfrom));
+	
+	int sockfd = CreateSocketandBind(67, SOCK_DGRAM, AF_INET, IPPROTO_IP);
+	int Retval = 0;
+
+	if (sockfd == SOCKET_ERROR)
+	{
+		sprintf(logbuffer, "[E] DHCP_Thread(): Unable to create Socket (Error: %s)\n", strerror(errno));
+		logger(logbuffer);
+
+		exit(errno);
+	}
+	else
+		Retval = listening("DHCP", sockfd, 1);
+
+#ifdef _WIN32
+	return Retval;
+#endif	
+}
+
+#ifdef _WIN32
+	DWORD WINAPI BOOTP_Thread()
+#else
+	void BOOTP_Thread()
+#endif
+{
+	memset(&from, 0, sizeof(from));
+
+	int sockfd = CreateSocketandBind(4011, SOCK_DGRAM, AF_INET, IPPROTO_UDP);
+	int Retval = 0;
+
+	if (sockfd == SOCKET_ERROR)
+	{
+		Retval = sockfd;
+
+		sprintf(logbuffer, "[E] BOOTP_Thread(): Unable to create Socket (Error: %s)\n", strerror(errno));
+		logger(logbuffer);
+	}
+	else
+		Retval = listening("BOOTP", sockfd, 0);
+
+#ifdef _WIN32
+	return Retval;
+#endif
+}
+
 int bootp_start()
 {
+	int Retval = 0;
 
 #ifdef _WIN32
 	WSADATA wsa;
-	WSAStartup(MAKEWORD(2, 0), &wsa);
+	DWORD myThreadID;
+	HANDLE ThreadID;
+
+	Retval = WSAStartup(MAKEWORD(2, 0), &wsa);
+#else
+	pthread_t myThreadID;
 #endif
 
-	int bootp_socket = SOCKET_ERROR;
-#ifndef _WIN32
-	int dhcp_socket = SOCKET_ERROR;
-#endif
-	int hostretval = 0;
+	Retval = gethostname(Server.nbname, sizeof(Server.nbname));
 
-	hostretval = gethostname(Server.nbname, sizeof(Server.nbname));
 	Config.ServerIP = IP2Bytes(hostname_to_ip(Server.nbname));
 	Config.SubnetMask = IP2Bytes("255.255.255.0");
-#ifndef _WIN32
-	pid_t pid = fork();
 
-	if (pid > 0)
-	{
+	/* DHCP Thread (Handle this in Background) */
+
+#ifdef _WIN32
+	ThreadID = CreateThread(0, 0, &DHCP_Thread, 0, 0, &myThreadID);
+#else
+	Retval = pthread_create(&myThreadID, 0, &DHCP_Thread, NULL);
 #endif
-		bootp_socket = CreateUnicastSocketAndBind(Config.BOOTPPort, INADDR_ANY);
+	BOOTP_Thread();
 
-		if (bootp_socket != SOCKET_ERROR)
-			return BOOTP_listening(bootp_socket, (saddr*)&from, 0);
-		else
-			return bootp_socket;
-#ifndef _WIN32
-	}
-	else
-	{
-		dhcp_socket = CreateBroadCastSocketAndBind(Config.DHCPPort, INADDR_ANY);
-
-		if (dhcp_socket != SOCKET_ERROR)
-			return DHCP_listening(dhcp_socket, (saddr*)&bfrom, 1);
-		else
-			return dhcp_socket;
-	}
+#ifdef _WIN32
+	CloseHandle(ThreadID);
+#else
+	pthread_exit(&myThreadID);
 #endif
-	return 1;
-}
-
-int DHCP_listening(int con, saddr* socket, int mode)
-{
-	int Retval = 0;
-	int load = 0;
-	char Buffer[DHCP_BUFFER_SIZE];
-	uint32_t PacketSize = 0;
-
-	if (socket != NULL)
-	{
-		while (load == 0)
-		{
-			ZeroOut(Buffer, sizeof(Buffer));
-
-			socketlen = sizeof(bfrom);
-			Retval = recvfrom(con, Buffer, sizeof(Buffer), 0, (struct sockaddr*)&bfrom, &socketlen);
-
-			if (Retval > 0)
-			{
-				PacketSize = Retval;
-
-				if (FindVendorOpt(Buffer, PacketSize) == 0)
-				{
-					Retval = Handle_DHCP_Request(con, Buffer, 0, socket, mode);
-					ZeroOut(&Client, sizeof(Client));
-				}
-			}
-		}
-	}
 
 	return Retval;
 }
 
-int BOOTP_listening(int con, saddr* socket, int mode)
+int listening(const char* Context, int con, int mode)
 {
 	int Retval = 1;
 	int load = 0;
 	char Buffer[DHCP_BUFFER_SIZE];
+	uint32_t PacketSize = 0, MessageType = 0;
 
 	if (socket != NULL)
 	{
@@ -186,49 +164,80 @@ int BOOTP_listening(int con, saddr* socket, int mode)
 		{
 			ZeroOut(Buffer, sizeof(Buffer));
 
-			socketlen = sizeof(from);
-			Retval = recvfrom(con, Buffer, sizeof(Buffer), 0, (struct sockaddr*)&from, &socketlen);
-
-			if (Buffer[(Retval - 14)] == 55 && Buffer[(Retval - 13)] == 11)
-				Client.isWDSRequest = 1;
-			else
-				Client.isWDSRequest = 0;
-
-			if (Client.isWDSRequest == 1)
+			if (mode == 0)
 			{
-				memcpy(&Client.hw_address, &Buffer[BOOTP_OFFSET_MACADDR], Buffer[BOOTP_OFFSET_MACLEN]);
-				memcpy(&Client.ClientArch, &Buffer[(BOOTP_OFFSET_CARCH + 2)], Buffer[(BOOTP_OFFSET_CARCH + 1)]);
+				socketlen = sizeof(from);
+				Retval = recvfrom(con, Buffer, sizeof(Buffer), 0, (struct sockaddr*)&from, &socketlen);
+			}
+			else
+			{
+				socketlen = sizeof(bfrom);
+				Retval = recvfrom(con, Buffer, sizeof(Buffer), 0, (struct sockaddr*)&bfrom, &socketlen);
+			}
 
-				if (wdsnbp.ActionDone == 1)
-					Retval = Handle_DHCP_Request(con, Buffer,
-					GetClientinfo(Buffer[BOOTP_OFFSET_SYSARCH], Client.hw_address, wdsnbp.ActionDone), socket, mode);
-				else
+			PacketSize = Retval;
+
+			switch (Buffer[BOOTP_OFFSET_BOOTPTYPE])
+			{
+			case BOOTP_REQUEST: /* DHCP Request */
+				if (PacketSize > DHCP_MINIMAL_PACKET_SIZE)
 				{
-					if (Config.AllowUnknownClients == 0 && GetClientRule(Client.hw_address) == 1)
-						wdsnbp.ActionDone = 1;
+					if (Buffer[(PacketSize - 14)] == 55 && Buffer[(PacketSize - 13)] == 11)
+						Client.isWDSRequest = 1;
 					else
-						if (Config.DropUnkownClients != 1 && Config.AllowUnknownClients != 1)
-							wdsnbp.NextAction = WDSBP_OPTVAL_ACTION_ABORT;
-						else
-							wdsnbp.NextAction = WDSBP_OPTVAL_ACTION_DROP;
+						Client.isWDSRequest = 0;
+
+					if (Client.isWDSRequest == 1 && mode == 0)
+					{
+						memcpy(&Client.hw_address, &Buffer[BOOTP_OFFSET_MACADDR], Buffer[BOOTP_OFFSET_MACLEN]);
+
+						if (wdsnbp.ActionDone == 1)
+							Retval = Handle_DHCP_Request(con, Buffer,
+								GetClientinfo(Buffer[BOOTP_OFFSET_SYSARCH], Client.hw_address,
+									GetClientRule(Client.hw_address)), mode);
+
+						wdsnbp.ActionDone = 1;
+					}
+					else
+					{
+						Client.isWDSRequest = 0;
+						wdsnbp.ActionDone = 0;
+						wdsnbp.PXEPromptDone = 0;
+
+						Retval = Handle_DHCP_Request(con, Buffer, 0, mode);
+					}
 				}
+				break;
+			default:
+				memcpy(&MessageType, &Buffer[BOOTP_OFFSET_BOOTPTYPE], sizeof(MessageType));
 
-				wdsnbp.ActionDone = 1;
+				switch (SWAB32(MessageType))
+				{
+				case PKT_NCQ:
+					Retval = Handle_NCQ_Request(con, Buffer, PacketSize);
+					break;
+				case PKT_RQU:
+					break;
+				case PKT_NEG:
+					break;
+				case PKT_AUT:
+					break;
+				case PKT_OFF:
+					break;
+				case PKT_REQ:
+					break;
+				default:
+					break;
+				}
+				break;
 			}
-			else
-			{
-				wdsnbp.NextAction = WDSBP_OPTVAL_ACTION_APPROVAL;
-				wdsnbp.ActionDone = 0;
-				wdsnbp.PXEPromptDone = 0;
-				wdsnbp.Architecture = 0;
 
-				Retval = Handle_DHCP_Request(con, Buffer, wdsnbp.ActionDone, socket, mode);
-
-				if (Retval == SOCKET_ERROR)
-					Retval = SOCKET_ERROR;
-			}
+			if (Retval == SOCKET_ERROR)
+				Retval = SOCKET_ERROR;
 		}
 	}
+	else
+		Retval = SOCKET_ERROR;
 
 	return Retval;
 }
@@ -283,24 +292,21 @@ int validateDHCPPacket(char* Data, size_t packetlen)
 	return 0;
 }
 
-int WDS_Send(int con, char* data, size_t length, saddr* socket, int mode)
+int Send(int con, char* data, size_t length, int mode)
 {
-	socket = socket; /* GCC unused warning */
+	int Retval = 0;
 
 	if (mode == 0)
-		return sendto(con, data, length, 0, (struct sockaddr*)&from, sizeof(from));
+		Retval = sendto(con, data, length, 0, (struct sockaddr*)&from, sizeof(from));
 	else
 	{
 		bfrom.sin_addr.s_addr = inet_addr(BROADCAST_ADDR);
-		return sendto(con, data, length, 0, (struct sockaddr*)&bfrom, sizeof(bfrom));
+		Retval = sendto(con, data, length, 0, (struct sockaddr*)&bfrom, sizeof(bfrom));
 	}
-}
 
-int DHCP_Send(int con, char* data, size_t length, saddr* socket, int mode)
-{
-	socket = socket; /* GCC unused warning */
-	mode = mode;
-
-	bfrom.sin_addr.s_addr = inet_addr(BROADCAST_ADDR);
-	return sendto(con, data, length, 0, (struct sockaddr*)&bfrom, sizeof(bfrom));
+#if DEBUGMODE == 1
+	if (Retval != SOCKET_ERROR && Retval > DHCP_MINIMAL_PACKET_SIZE)
+		printf("[D] Sent %d bytes to Client!\n", Retval);
+#endif
+	return Retval;
 }

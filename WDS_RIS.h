@@ -16,17 +16,24 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "WDS.h"
 #ifndef RIS
 #define RIS                             1
-#define NIC_DRIVER_LIST_FILE		"Nics.txt"
+#define NIC_DRIVER_LIST_FILE			"Nics.txt"
 
-#define RIS_DRIVER_BUSTYPE_PCI		"5"
-#define RIS_DRIVER_CHARACTERISTICS	"132"
-#define RIS_DRIVER_OFFSET_VENID		24
-#define RIS_DRIVER_OFFSET_DEVID		26
+#define RIS_DRIVER_BUSTYPE_PCI			"5"
+#define RIS_DRIVER_CHARACTERISTICS		"132"
+#define RIS_DRIVER_OFFSET_VENID			24
+#define RIS_DRIVER_OFFSET_DEVID			26
 
-#define PKT_NCQ                         0x51434e81	/* Network Card Query */
 #define NCR_OK                          0x00000000	/* OK */
 #define NCR_KO                          0xc000000d	/* NOT FOUND! */
-#define PKT_NCR                         0x52434e82	/* Network Card Reply */
+
+#define PKT_NCR							0x52434e82	/* Network Card Reply */
+
+#define PKT_NCQ							0x51434e81	/* Network Card Query */
+#define PKT_RQU							0x55515281	/* OSChooser File Request */
+#define PKT_NEG							0x47454e81	/* NTLM Negotiate */
+#define PKT_AUT							0x54554181	/* NTLM Authenticate */
+#define PKT_OFF							0x46464f81	/* NTLM Reboot to new PXE ROM */
+#define PKT_REQ							0x51455281	/* Unknown */
 
 typedef struct _DRIVER
 {

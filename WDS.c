@@ -171,7 +171,7 @@ const char* hostname_to_ip(const char* hostname)
 	for (i = 0; addr_list[i] != NULL; i++)
 		return inet_ntoa(*addr_list[i]);
 
-	return NULL;	// silence the OSX Compiler.... ;(
+	return NULL;
 }
 
 unsigned char get_string(FILE *fd, char* dest, size_t size)
@@ -205,35 +205,41 @@ uint32_t IP2Bytes(const char* IP_address)
 
 int setDHCPRespType(int found, int mode)
 {
-	if (mode == 1)
-		return DHCPOFFER;
+#ifndef _WIN32	/* avoid the GCC Unused Warning */
+	mode = mode;
+	found = found;
+#endif
+
+	int Retval = DHCPOFFER;
+		
+	if (Client.lastDHCPType == DHCPDISCOVER)
+		Retval = DHCPOFFER;
 	else
-		if (Client.lastDHCPType == 3)
-			if (Client.isWDSRequest == 1)
-				return DHCPACK;
-			else
-				return DHCPOFFER;
+		if (Client.lastDHCPType == DHCPREQUEST)
+			Retval = DHCPACK;
 		else
-			return DHCPOFFER;
+			Retval = DHCPOFFER;
+
+	return Retval;
 }
 
 int isZeroIP(char* IP)
 {
-	char ZeroIP[4] = { 0x00, 0x00, 0x00, 0x00 };
-
-	if (memcmp(IP, ZeroIP, IPV4_ADDR_LENGTH) == 0)
+	char ZeroIP[IPV4_ADDR_LENGTH] = { 0x00, 0x00, 0x00, 0x00 };
+	
+	if (memcmp(IP, ZeroIP , IPV4_ADDR_LENGTH) == 0)
 		return 0;
 	else
 		return 1;
 }
 
-int FindVendorOpt(const char* Buffer, size_t buflen)
+int FindVendorOpt(const char* Buffer, size_t buflen, size_t offset)
 {
-	size_t i = 240;
+	size_t i = offset;
 
-	for (i; i < buflen; i = i + 9)
-		if (i < buflen)
-			if (memcmp(VENDORIDENT, &Buffer[i], 9) == 0)
+	for (i; i < buflen; i = i + strlen(VENDORIDENT))
+		if (i < buflen && offset < buflen)
+			if (memcmp(VENDORIDENT, &Buffer[i], strlen(VENDORIDENT)) == 0)
 				return 0;
 
 	return 1;
@@ -247,39 +253,39 @@ int isValidDHCPType(int type)
 	{
 	case DHCPDISCOVER:
 		result = 0;
-		Client.lastDHCPType = 1;
+		Client.lastDHCPType = DHCPDISCOVER;
 		break;
 	case DHCPOFFER:
 		result = 1;
-		Client.lastDHCPType = 2;
+		Client.lastDHCPType = DHCPOFFER;
 		break;
 	case DHCPREQUEST:
 		result = 0;
-		Client.lastDHCPType = 3;
+		Client.lastDHCPType = DHCPREQUEST;
 		break;
 	case DHCPDECLINE:
 		result = 1;
-		Client.lastDHCPType = 4;
+		Client.lastDHCPType = DHCPDECLINE;
 		break;
 	case DHCPACK:
 		result = 1;
-		Client.lastDHCPType = 5;
+		Client.lastDHCPType = DHCPACK;
 		break;
 	case DHCPNAK:
 		result = 1;
-		Client.lastDHCPType = 6;
+		Client.lastDHCPType = DHCPNAK;
 		break;
 	case DHCPRELEASE:
 		result = 1;
-		Client.lastDHCPType = 7;
+		Client.lastDHCPType = DHCPRELEASE;
 		break;
 	case DHCPINFORM:
 		result = 1;
-		Client.lastDHCPType = 8;
+		Client.lastDHCPType = DHCPINFORM;
 		break;
 	default:
 		result = 1;
-		Client.lastDHCPType = 1;
+		Client.lastDHCPType = DHCPDISCOVER;
 		break;
 	}
 

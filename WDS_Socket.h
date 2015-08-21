@@ -32,29 +32,24 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define WDS_MIN_PACKETSIZE     240
 #define PXE_MIN_PACKETSIZE     304
 
-int BCSockfd;
-int UCSockfd;
-
 int socketlen;
 
 struct sockaddr_in from;
-socklen_t fromlen;
-
 struct sockaddr_in bfrom;
-socklen_t bfromlen;
 
-struct sockaddr_in Userv_addr;
-struct sockaddr_in Bserv_addr;
-typedef struct sockaddr saddr;
-
-int BOOTP_listening(int con, saddr* socket, int mode);
-int DHCP_listening(int con, saddr* socket, int mode);
+int listening(const char* Context, int con, int mode);
+#ifndef _WIN32
+void DHCP_Thread();
+void BOOTP_Thread();
+#else
+DWORD WINAPI DHCP_Thread();
+DWORD WINAPI BOOTP_Thread();
+#endif
 
 int validateDHCPPacket(char* Data, size_t packetlen);
-int CreateBroadCastSocketAndBind(int port, in_addr_t in_addr);
-int CreateUnicastSocketAndBind(int port, in_addr_t in_addr);
+int CreateSocketandBind(int port, int SocketType, int AddressFamiliy, int Protocol);
+
 int bootp_start();
-int WDS_Send(int con, char* buf, size_t len, saddr* socket, int mode);
-int DHCP_Send(int con, char* buf, size_t len, saddr* socket, int mode);
+int Send(int con, char* buf, size_t len, int mode);
 
 #endif /* WDS_SOCKET_H_ */

@@ -34,8 +34,8 @@ int GetClientRule(const unsigned char* MACb)
 	unsigned int MACa[6];
 	unsigned char mac[6];
 
-	int Action = 0;
-	int Mode = 0;
+	int Action = Config.DefaultAction;
+	int Mode = Config.DefaultMode;
 	int Prompt = 0;
 	int i = 0;
 	int result = 0;
@@ -85,58 +85,58 @@ int GetClientRule(const unsigned char* MACb)
 
 		switch (Prompt)
 		{
-		case 0:
-			Client.PXEPrompt = WDSBP_OPTVAL_PXE_PROMPT_OPTIN;
+		case WDSBP_OPTVAL_PXE_PROMPT_OPTIN:
+			wdsnbp.PXEClientPrompt = WDSBP_OPTVAL_PXE_PROMPT_OPTIN;
 			break;
-		case 1:
-			Client.PXEPrompt = WDSBP_OPTVAL_PXE_PROMPT_OPTOUT;
+		case WDSBP_OPTVAL_PXE_PROMPT_OPTOUT:
+			wdsnbp.PXEClientPrompt = WDSBP_OPTVAL_PXE_PROMPT_OPTOUT;
 			break;
-		case 2:
-			Client.PXEPrompt = WDSBP_OPTVAL_PXE_PROMPT_NOPROMPT;
+		case WDSBP_OPTVAL_PXE_PROMPT_NOPROMPT:
+			wdsnbp.PXEClientPrompt = WDSBP_OPTVAL_PXE_PROMPT_NOPROMPT;
 			break;
 		default:
 			if (Config.AllowUnknownClients == 1)
-				Client.PXEPrompt = WDSBP_OPTVAL_PXE_PROMPT_OPTIN;
+				wdsnbp.PXEClientPrompt = WDSBP_OPTVAL_PXE_PROMPT_OPTIN;
 			else
-				Client.PXEPrompt = WDSBP_OPTVAL_PXE_PROMPT_OPTOUT;
+				wdsnbp.PXEClientPrompt = WDSBP_OPTVAL_PXE_PROMPT_NOPROMPT;
 			break;
 		}
 
 		switch (Action)
 		{
-		case 1:
+		case  WDSBP_OPTVAL_ACTION_APPROVAL:
 			wdsnbp.NextAction = WDSBP_OPTVAL_ACTION_APPROVAL;
 			break;
-		case 3:
+		case WDSBP_OPTVAL_ACTION_REFERRAL:
 			wdsnbp.NextAction = WDSBP_OPTVAL_ACTION_REFERRAL;
 			break;
-		case 5:
+		case WDSBP_OPTVAL_ACTION_ABORT:
 			wdsnbp.NextAction = WDSBP_OPTVAL_ACTION_ABORT;
 			break;
 		default:
-			Client.WDSMode = Config.DefaultAction;
+			wdsnbp.NextAction = Config.DefaultAction;
 			break;
 		}
 
 		return 1;
 	}
 	else
-		if (Config.AllowUnknownClients == 1)
+		if (Config.AllowUnknownClients == 0)
+			return 0;
+		else
 		{
-			Client.WDSMode = WDS_MODE_WDS;
-			wdsnbp.NextAction = WDSBP_OPTVAL_ACTION_APPROVAL;
+			wdsnbp.PXEClientPrompt = WDSBP_OPTVAL_PXE_PROMPT_OPTIN;
+			Client.WDSMode = WDSBP_OPTVAL_ACTION_APPROVAL;
 
 			return 1;
-		}
-		else
-			return 0;
+		}	
 }
 
 int GetServerSettings()
 {
-	Server.RequestID = 1;
+	wdsnbp.RequestID = 1;
 
-	Config.DropUnkownClients = 1;
+	Config.DropUnkownClients = 0;
 	Config.DefaultAction = WDSBP_OPTVAL_ACTION_ABORT;
 	Config.AllowUnknownClients = SETTINGS_DEFAULT_ALLOWUNKCLIENTS;
 	Config.DefaultMode = SETTINGS_DEFAULT_WDSMODE;
@@ -152,7 +152,7 @@ int GetServerSettings()
 	{
 		while (!feof(fil))
 		{
-			fscanf(fil, "CurrentIDs: %lu\n", &wdsnbp.RequestID);
+			fscanf(fil, "CurrentIDs: %d\n", &wdsnbp.RequestID);
 			fscanf(fil, "PollIntervall: %d\n", &Config.PollIntervall);
 			fscanf(fil, "TFTPRetryCount: %d\n", &Config.TFTPRetryCount);
 			fscanf(fil, "AllowUnknownClients: %d\n", &Config.AllowUnknownClients);

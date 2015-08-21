@@ -37,21 +37,20 @@ static inline void skipspaces(FILE *fd);
 static inline void eol(FILE *fd);
 
 #define SOCKET_ERROR		-1
-#define WSAGetLastError 	errno
-#define WSACleanup  		cleanup
+#define WSAGetLastError() 	errno()
+#define WSACleanup	 		cleanup()
 #define INVALID_SOCKET		-1
-#define closesocket         close
+#define closesocket()		close()
 #else
+#include <inttypes.h>
+#include <winsock2.h>
+#include <WS2tcpip.h>
 
 #pragma comment(lib, "Ws2_32.lib")
 
 static __inline void skipspaces(FILE *fd);
 static __inline void eol(FILE *fd);
 #define in_addr_t unsigned long
-
-#include <inttypes.h>
-#include <winsock2.h>
-#include <WS2tcpip.h>
 #endif
 
 #ifndef WDS_H_
@@ -83,8 +82,8 @@ static __inline void eol(FILE *fd);
 
 #ifndef SETTINGS_DEFAULT_WDSCONFIG
 #define SETTINGS_DEFAULT_ALLOWUNKCLIENTS		0
-#define SETTINGS_DEFAULT_POLLINTERVALL			10		
-#define SETTINGS_DEFAULT_RETRYCOUNT			23
+#define SETTINGS_DEFAULT_POLLINTERVALL			9		
+#define SETTINGS_DEFAULT_RETRYCOUNT			9
 #define SETTINGS_DEFAULT_SHOWREQS				1
 #define SETTINGS_DEFAULT_DHCPMODE				1
 #define SETTINGS_DEFAULT_VERSIONQUERY			0
@@ -179,19 +178,19 @@ struct server_config
 
 struct wdsparams
 {
-	uint8_t VersionQuery;
-	uint8_t ClientPrompt;
-	uint8_t ActionDone;
-	uint8_t Architecture;
-	uint8_t NextAction;
-	uint8_t PXEPromptDone;
-	uint8_t PXEClientPrompt;
+	int VersionQuery;
+	int ClientPrompt;
+	int ActionDone;
+	int Architecture;
+	int NextAction;
+	int PXEPromptDone;
+	int PXEClientPrompt;
 
-	unsigned long RequestID;
-	unsigned long ServerVersion;
+	int RequestID;
+	int ServerVersion;
 
-	short RetryCount;
-	short PollIntervall;
+	int RetryCount;
+	int PollIntervall;
 } wdsnbp;
 
 struct Client_Info
@@ -238,6 +237,7 @@ unsigned char get_string(FILE *fd, char* dest, size_t size);
 int isValidDHCPType(int type);
 int setDHCPRespType(int found, int mode);
 int isZeroIP(char* IP);
+int FindVendorOpt(const char* Buffer, size_t buflen, size_t offset);
 
 void handle_args(int data_len, char* Data[]);
 void logger(char* text);

@@ -30,9 +30,9 @@ static __inline void skipspaces(FILE *fd)
 			break;
 }
 #ifndef _WIN32
-static inline void eol(FILE *fd)
+	static inline void eol(FILE *fd)
 #else
-static __inline void eol(FILE *fd)
+	static __inline void eol(FILE *fd)
 #endif
 {
 	unsigned char c = 0;
@@ -44,7 +44,7 @@ static __inline void eol(FILE *fd)
 
 int Handle_NCQ_Request(int con, char* Data, size_t Packetlen)
 {
-	int retval = 1;
+	int Retval = 1;
 
 	if (Packetlen > 0)
 	{
@@ -56,7 +56,7 @@ int Handle_NCQ_Request(int con, char* Data, size_t Packetlen)
 		const char ris_params[] =
 			"Description"		"2" "RIS NIC Card"
 			"Characteristics"	"1" RIS_DRIVER_CHARACTERISTICS
-			"BusType"		"1" RIS_DRIVER_BUSTYPE_PCI;
+			"BusType"			"1" RIS_DRIVER_BUSTYPE_PCI;
 
 		uint32_t type = SWAB32(PKT_NCR), value = 0, res = 0;
 		size_t ulen = 0;
@@ -132,8 +132,6 @@ int Handle_NCQ_Request(int con, char* Data, size_t Packetlen)
 			/* Packet Length */
 			value = SWAB32(offset);
 			memcpy(&packet[0x4], &value, sizeof(value));
-
-			retval = WDS_Send(con, packet, offset, (saddr*)&from, 0);
 		}
 		else /* Send NCR_KO packet when driver was not found... */
 		{
@@ -149,21 +147,18 @@ int Handle_NCQ_Request(int con, char* Data, size_t Packetlen)
 			sprintf(logbuffer, "[E]: Driver not found (PCI\\VEN_%X&DEV_%X)\n",
 				SWAB16(vid), SWAB16(pid));
 			logger(logbuffer);
-
-			retval = WDS_Send(con, packet, offset, (saddr*)&from, 0);
-
-			if (retval > 1)
-				retval = 0;
 		}
 
 		sprintf(logbuffer, "%s", "========================================\n");
 		logger(logbuffer);
+
+		Retval = Send(con, packet, offset, 0);
 	}
+	
+	if (Retval > 1)
+		Retval = 0;
 
-	if (retval > 1)
-		retval = 0;
-
-	return retval;
+	return Retval;
 }
 
 int find_drv(uint16_t cvid, uint16_t cpid, DRIVER *drv)
@@ -178,42 +173,45 @@ int find_drv(uint16_t cvid, uint16_t cpid, DRIVER *drv)
 		FILE *fd = fopen(NIC_DRIVER_LIST_FILE, "r");
 
 		if (fd == NULL)
-			return 1;
-
-		while (found == 0)
-		{
-			if (fread(buffer, 1, 4, fd) != 4)
-				break;
-
-			buffer[4] = 0;
-			sscanf(buffer, "%x2", &vid);
-			skipspaces(fd);
-
-			if (cvid == vid)
+			return found;
+		else
+			while (found == 0)
 			{
 				if (fread(buffer, 1, 4, fd) != 4)
 					break;
 
 				buffer[4] = 0;
-				sscanf(buffer, "%x2", &pid);
-
+				sscanf(buffer, "%x2", &vid);
 				skipspaces(fd);
 
-				if (cpid == pid)
+				if (cvid == vid)
 				{
-					if (!isspace(get_string(fd, drv->driver, sizeof(drv->driver))))
-						skipspaces(fd);
-
-					if (!isspace(get_string(fd, drv->service, sizeof(drv->service))))
-						eol(fd);
-
-					if ((cvid == vid) && (cpid == pid))
-					{
-						drv->vid = vid;
-						drv->pid = pid;
-
-						found = 1;
+					if (fread(buffer, 1, 4, fd) != 4)
 						break;
+
+					buffer[4] = 0;
+					sscanf(buffer, "%x2", &pid);
+
+					skipspaces(fd);
+
+					if (cpid == pid)
+					{
+						if (!isspace(get_string(fd, drv->driver, sizeof(drv->driver))))
+							skipspaces(fd);
+
+						if (!isspace(get_string(fd, drv->service, sizeof(drv->service))))
+							eol(fd);
+
+						if ((cvid == vid) && (cpid == pid))
+						{
+							drv->vid = vid;
+							drv->pid = pid;
+
+							found = 1;
+							break;
+						}
+						else
+							continue;
 					}
 					else
 						continue;
@@ -221,10 +219,7 @@ int find_drv(uint16_t cvid, uint16_t cpid, DRIVER *drv)
 				else
 					continue;
 			}
-			else
-				continue;
-		}
-
+		
 		fclose(fd);
 	}
 	else

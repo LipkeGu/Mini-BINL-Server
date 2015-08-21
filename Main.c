@@ -23,22 +23,27 @@ int main(int argc, char* argv[])
 	Config.BOOTPPort = 4011;
 	Config.DHCPPort = 67;
 
-	Config.ReferalIP = (unsigned long)0;
-	Config.RouterIP = (unsigned long)0;
+	Config.ReferalIP = htonl(0);
+	Config.RouterIP = htonl(0);
 
 	sprintf(Server.dnsdomain, "%s", WDS_DEFUALT_DOMAIN);
+
+	GetServerSettings();
 
 	wdsnbp.ActionDone = 0;
 	wdsnbp.NextAction = WDSBP_OPTVAL_ACTION_APPROVAL;
 	wdsnbp.PollIntervall = Config.PollIntervall;
 	wdsnbp.RetryCount = Config.TFTPRetryCount;
-	wdsnbp.RequestID = Server.RequestID;
+	wdsnbp.RequestID = 1;
 	wdsnbp.PXEClientPrompt = Config.PXEClientPrompt;
-	wdsnbp.PXEPromptDone = Config.PXEClientPrompt;
+	wdsnbp.PXEPromptDone = 0;
 	wdsnbp.VersionQuery = Config.VersionQuery;
 
 	Config.DHCPReqDetection = SETTINGS_DEFAULT_DHCPMODE;
 
+	Client.WDSMode = 1;
+
+	Config.ShowClientRequests = 1;
 	if (Config.AllowUnknownClients == 1)
 		Config.NeedsApproval = 0;
 	else
@@ -50,9 +55,6 @@ int main(int argc, char* argv[])
 
 #ifndef _WIN32
 	pid_t mainpid = fork();
-#if DEBUGMODE == 1
-	bootp_start();
-#else
 
 	if (mainpid == 0)
 	{
@@ -61,9 +63,9 @@ int main(int argc, char* argv[])
 	}
 	else
 		exit(0);
-#endif
 #else
 	bootp_start();
 #endif
+
 	return 0;
 }
