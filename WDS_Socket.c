@@ -40,7 +40,7 @@ int CreateSocketandBind(int port, int SocketType, int AddressFamiliy, int Protoc
 				sprintf(logbuffer, "[E] Bind(): Cant bind to Socket on port %d: (Error: %s)\n", port, strerror(errno));
 				logger(logbuffer);
 
-				sockfd = SOCKET_ERROR;
+				return SOCKET_ERROR;
 			}
 		}
 		else
@@ -48,7 +48,7 @@ int CreateSocketandBind(int port, int SocketType, int AddressFamiliy, int Protoc
 			sprintf(logbuffer, "[E] SetSockOpt(): Unable to Option for socket on port %d: (Error: %s)\n", port, strerror(errno));
 			logger(logbuffer);
 
-			sockfd = SOCKET_ERROR;
+			return SOCKET_ERROR;
 		}
 	}
 	else
@@ -56,7 +56,7 @@ int CreateSocketandBind(int port, int SocketType, int AddressFamiliy, int Protoc
 		sprintf(logbuffer, "[E] Socket(): Unable to create socket option for port %d: (Error: %s)\n", port, strerror(errno));
 		logger(logbuffer);
 
-		sockfd = SOCKET_ERROR;
+		return SOCKET_ERROR;
 	}
 
 	return sockfd;
@@ -154,90 +154,83 @@ int bootp_start()
 int listening(const char* Context, int con, int mode)
 {
 	int Retval = 1;
-	int load = 0;
 	char Buffer[DHCP_BUFFER_SIZE];
 	uint32_t PacketSize = 0, MessageType = 0;
 
-	if (socket != NULL)
+	while (Retval != SOCKET_ERROR)
 	{
-		while (load == 0)
+		ZeroOut(Buffer, sizeof(Buffer));
+
+		if (mode == 0)
 		{
-			ZeroOut(Buffer, sizeof(Buffer));
+			socketlen = sizeof(from);
+			Retval = recvfrom(con, Buffer, sizeof(Buffer), 0, (struct sockaddr*)&from, &socketlen);
+		}
+		else
+		{
+			socketlen = sizeof(bfrom);
+			Retval = recvfrom(con, Buffer, sizeof(Buffer), 0, (struct sockaddr*)&bfrom, &socketlen);
+		}
 
-			if (mode == 0)
+		if (Retval < 1)
+			continue;
+		
+		PacketSize = Retval;
+		
+		switch (Buffer[BOOTP_OFFSET_BOOTPTYPE])
+		{
+		case BOOTP_REQUEST: /* DHCP Request */
+			if (PacketSize > DHCP_MINIMAL_PACKET_SIZE)
 			{
-				socketlen = sizeof(from);
-				Retval = recvfrom(con, Buffer, sizeof(Buffer), 0, (struct sockaddr*)&from, &socketlen);
-			}
-			else
-			{
-				socketlen = sizeof(bfrom);
-				Retval = recvfrom(con, Buffer, sizeof(Buffer), 0, (struct sockaddr*)&bfrom, &socketlen);
-			}
-
-			PacketSize = Retval;
-
-			switch (Buffer[BOOTP_OFFSET_BOOTPTYPE])
-			{
-			case BOOTP_REQUEST: /* DHCP Request */
-				if (PacketSize > DHCP_MINIMAL_PACKET_SIZE)
+				if (Buffer[(PacketSize - 14)] == 55 && Buffer[(PacketSize - 13)] == 11)
+					Client.isWDSRequest = 1;
+				else
+					Client.isWDSRequest = 0;
+				
+				if (Client.isWDSRequest == 1 && mode == 0)
 				{
-					if (Buffer[(PacketSize - 14)] == 55 && Buffer[(PacketSize - 13)] == 11)
-						Client.isWDSRequest = 1;
-					else
-						Client.isWDSRequest = 0;
+					memcpy(&Client.hw_address, &Buffer[BOOTP_OFFSET_MACADDR], Buffer[BOOTP_OFFSET_MACLEN]);
 
-					if (Client.isWDSRequest == 1 && mode == 0)
-					{
-						memcpy(&Client.hw_address, &Buffer[BOOTP_OFFSET_MACADDR], Buffer[BOOTP_OFFSET_MACLEN]);
+					if (wdsnbp.ActionDone == 1)
+						Retval = Handle_DHCP_Request(con, Buffer, GetClientinfo(Buffer[BOOTP_OFFSET_SYSARCH], Client.hw_address,
+							GetClientRule(Client.hw_address)), mode);
 
-						if (wdsnbp.ActionDone == 1)
-							Retval = Handle_DHCP_Request(con, Buffer,
-								GetClientinfo(Buffer[BOOTP_OFFSET_SYSARCH], Client.hw_address,
-									GetClientRule(Client.hw_address)), mode);
-
-						wdsnbp.ActionDone = 1;
-					}
-					else
-					{
-						Client.isWDSRequest = 0;
-						wdsnbp.ActionDone = 0;
-						wdsnbp.PXEPromptDone = 0;
-
-						Retval = Handle_DHCP_Request(con, Buffer, 0, mode);
-					}
+					wdsnbp.ActionDone = 1;
 				}
+				else
+				{
+					Client.isWDSRequest = 0;
+					wdsnbp.ActionDone = 0;
+					wdsnbp.PXEPromptDone = 0;
+
+					Retval = Handle_DHCP_Request(con, Buffer, 0, mode);
+				}
+			}
+			break;
+		default:
+			memcpy(&MessageType, &Buffer[BOOTP_OFFSET_BOOTPTYPE], sizeof(MessageType));
+
+			switch (SWAB32(MessageType))
+			{
+			case PKT_NCQ:
+				Retval = Handle_NCQ_Request(con, Buffer, PacketSize);
+				break;
+			case PKT_RQU:
+				break;
+			case PKT_NEG:
+				break;
+			case PKT_AUT:
+				break;
+			case PKT_OFF:
+				break;
+			case PKT_REQ:
 				break;
 			default:
-				memcpy(&MessageType, &Buffer[BOOTP_OFFSET_BOOTPTYPE], sizeof(MessageType));
-
-				switch (SWAB32(MessageType))
-				{
-				case PKT_NCQ:
-					Retval = Handle_NCQ_Request(con, Buffer, PacketSize);
-					break;
-				case PKT_RQU:
-					break;
-				case PKT_NEG:
-					break;
-				case PKT_AUT:
-					break;
-				case PKT_OFF:
-					break;
-				case PKT_REQ:
-					break;
-				default:
-					break;
-				}
 				break;
 			}
-
-			if (Retval == SOCKET_ERROR)
-				Retval = SOCKET_ERROR;
+			break;
 		}
 	}
-	else
-		Retval = SOCKET_ERROR;
 
 	return Retval;
 }
@@ -247,7 +240,7 @@ int validateDHCPPacket(char* Data, size_t packetlen)
 	/* ensure that the packet is larger than 240 bytes */
 	if (packetlen < DHCP_MINIMAL_PACKET_SIZE)
 	{
-		sprintf(logbuffer, "[E] Packet too short!\n");
+		sprintf(logbuffer, "[E] Packetl is too short!\n");
 		logger(logbuffer);
 
 		return 1;

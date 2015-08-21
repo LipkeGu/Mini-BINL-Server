@@ -134,40 +134,47 @@ int GetClientRule(const unsigned char* MACb)
 
 int GetServerSettings()
 {
-	wdsnbp.RequestID = 1;
-
-	Config.DropUnkownClients = 0;
-	Config.DefaultAction = WDSBP_OPTVAL_ACTION_ABORT;
-	Config.AllowUnknownClients = SETTINGS_DEFAULT_ALLOWUNKCLIENTS;
-	Config.DefaultMode = SETTINGS_DEFAULT_WDSMODE;
-	Config.VersionQuery = SETTINGS_DEFAULT_VERSIONQUERY;
-	Config.PollIntervall = SETTINGS_DEFAULT_POLLINTERVALL;
-	Config.TFTPRetryCount = SETTINGS_DEFAULT_RETRYCOUNT;
-	Config.ShowClientRequests = SETTINGS_DEFAULT_SHOWREQS;
-	Config.PXEClientPrompt = SETTINGS_DEFAULT_CLIENTPROMPT;
-
 	FILE *fil = fopen(WDS_SETTINGS_FILE, "r");
 
 	if (fil != NULL)
 	{
 		while (!feof(fil))
 		{
-			fscanf(fil, "CurrentIDs: %d\n", &wdsnbp.RequestID);
-			fscanf(fil, "PollIntervall: %d\n", &Config.PollIntervall);
-			fscanf(fil, "TFTPRetryCount: %d\n", &Config.TFTPRetryCount);
-			fscanf(fil, "AllowUnknownClients: %d\n", &Config.AllowUnknownClients);
-			fscanf(fil, "VersionQuery: %d\n", &Config.VersionQuery);
-			fscanf(fil, "ShowClientRequests: %d\n", &Config.ShowClientRequests);
-			fscanf(fil, "DefaultAction: %d\n", &Config.DefaultAction);
-			fscanf(fil, "DefaultMode: %d\n", &Config.DefaultMode);
-			fscanf(fil, "PXEClientPrompt: %d\n", &Config.PXEClientPrompt);
-			fscanf(fil, "AllowServerSelection: %d\n", &Config.AllowServerSelection);
+			if (fscanf(fil, "DropUnkownClients: %d\n", &Config.DropUnkownClients) < 1)
+				Config.DropUnkownClients = 0;
+
+			if (fscanf(fil, "CurrentIDs: %d\n", &wdsnbp.RequestID) < 1)
+				wdsnbp.RequestID = 1;
+
+			if (fscanf(fil, "PollIntervall: %d\n", &Config.PollIntervall) < 1)
+				Config.PollIntervall = SETTINGS_DEFAULT_POLLINTERVALL;
+			
+			if (fscanf(fil, "TFTPRetryCount: %d\n", &Config.TFTPRetryCount) < 1)
+				Config.TFTPRetryCount = SETTINGS_DEFAULT_RETRYCOUNT;
+			
+			if (fscanf(fil, "AllowUnknownClients: %d\n", &Config.AllowUnknownClients) < 1)
+				Config.AllowUnknownClients = SETTINGS_DEFAULT_ALLOWUNKCLIENTS;
+
+			if (fscanf(fil, "VersionQuery: %d\n", &Config.VersionQuery) < 1)
+				Config.VersionQuery = SETTINGS_DEFAULT_VERSIONQUERY;
+
+			if (fscanf(fil, "ShowClientRequests: %d\n", &Config.ShowClientRequests) < 1)
+				Config.ShowClientRequests = SETTINGS_DEFAULT_SHOWREQS;
+
+			if (fscanf(fil, "DefaultAction: %d\n", &Config.DefaultAction) < 1)
+				Config.DefaultAction = WDSBP_OPTVAL_ACTION_ABORT;
+
+			if (fscanf(fil, "DefaultMode: %d\n", &Config.DefaultMode) < 1)
+				Config.DefaultMode = SETTINGS_DEFAULT_WDSMODE;
+
+			if (fscanf(fil, "PXEClientPrompt: %d\n", &Config.PXEClientPrompt) < 1)
+				Config.PXEClientPrompt = WDSBP_OPTVAL_PXE_PROMPT_OPTIN;
+
+			if (fscanf(fil, "AllowServerSelection: %d\n", &Config.AllowServerSelection) < 1)
+				Config.AllowServerSelection = 0;
 		}
 
-		if (fclose(fil) == 0)
-			return 0;
-		else
-			return 1;
+		return fclose(fil);
 	}
 	else
 		return 1;
