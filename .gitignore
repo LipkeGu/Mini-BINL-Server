@@ -36,3 +36,5 @@ ReadMe.txt
 *.cpp
 stdafx.h
 targetver.h
+*.db
+wdsnbp.0
