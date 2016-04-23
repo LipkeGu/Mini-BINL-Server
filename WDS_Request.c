@@ -309,27 +309,156 @@ int Handle_DHCP_Request(int con, char* Data, int found, int mode)
 	}
 	else
 	{
-		if (Config.AllowUnknownClients == 0)
+		char tmpbuffer[512];
+		uint8_t offset = 2;
+
+		uint8_t length = 0;
+		uint8_t option = 0;
+
+		memset(tmpbuffer, 0, sizeof(tmpbuffer));
+
+		// Next Action
+		option = WDSBP_OPT_NEXT_ACTION;
+		length = (uint8_t)sizeof(uint8_t);
+
+		memcpy(&tmpbuffer[offset], &option, sizeof(uint8_t));
+		offset += sizeof(uint8_t);
+
+		memcpy(&tmpbuffer[offset], &length, sizeof(uint8_t));
+		offset += sizeof(uint8_t);
+
+		memcpy(&tmpbuffer[offset], &wdsnbp.NextAction, sizeof(uint8_t));
+		offset += sizeof(uint8_t);
+
+		// RequestID
+		option = WDSBP_OPT_REQUEST_ID;
+		length = (uint8_t)sizeof(uint32_t);
+
+		memcpy(&tmpbuffer[offset], &option, sizeof(uint8_t));
+		offset += sizeof(uint8_t);
+		
+		memcpy(&tmpbuffer[offset], &length, sizeof(uint8_t));
+		offset += sizeof(uint8_t);
+
+		memcpy(&tmpbuffer[offset], &wdsnbp.RequestID, sizeof(uint32_t));
+		offset += sizeof(uint32_t);
+
+		// Poll Interval
+		option = WDSBP_OPT_POLL_INTERVAL;
+		length = (uint8_t)sizeof(uint16_t);
+
+		memcpy(&tmpbuffer[offset], &option, sizeof(uint8_t));
+		offset += sizeof(uint8_t);
+
+		memcpy(&tmpbuffer[offset], &length, sizeof(uint8_t));
+		offset += sizeof(uint8_t);
+
+		memcpy(&tmpbuffer[offset], &wdsnbp.PollIntervall, sizeof(uint16_t));
+		offset += sizeof(uint16_t);
+
+		// Retry Count
+		option = WDSBP_OPT_POLL_RETRY_COUNT;
+		length = (uint8_t)sizeof(uint16_t);
+
+		memcpy(&tmpbuffer[offset], &option, sizeof(uint8_t));
+		offset += sizeof(uint8_t);
+
+		memcpy(&tmpbuffer[offset], &length, sizeof(uint8_t));
+		offset += sizeof(uint8_t);
+
+		memcpy(&tmpbuffer[offset], &wdsnbp.RetryCount, sizeof(uint16_t));
+		offset += sizeof(uint16_t);
+
+		// Action Done
+		option = WDSBP_OPT_ACTION_DONE;
+		length = (uint8_t)sizeof(uint8_t);
+
+		memcpy(&tmpbuffer[offset], &option, sizeof(uint8_t));
+		offset += sizeof(uint8_t);
+
+		memcpy(&tmpbuffer[offset], &length, sizeof(uint8_t));
+		offset += sizeof(uint8_t);
+
+		memcpy(&tmpbuffer[offset], &wdsnbp.ActionDone, sizeof(uint8_t));
+		offset += sizeof(uint8_t);
+		
+		// Version Query
+		option = WDSBP_OPT_VERSION_QUERY;
+		length = (uint8_t)sizeof(uint8_t);
+
+		memcpy(&tmpbuffer[offset], &option, sizeof(uint8_t));
+		offset += sizeof(uint8_t);
+
+		memcpy(&tmpbuffer[offset], &length, sizeof(uint8_t));
+		offset += sizeof(uint8_t);
+
+		memcpy(&tmpbuffer[offset], &wdsnbp.VersionQuery, sizeof(uint8_t));
+		offset += sizeof(uint8_t);
+
+		// PXE Client Promt
+		option = WDSBP_OPT_PXE_CLIENT_PROMPT;
+		length = (uint8_t)sizeof(uint8_t);
+
+		memcpy(&tmpbuffer[offset], &option, sizeof(uint8_t));
+		offset += sizeof(uint8_t);
+
+		memcpy(&tmpbuffer[offset], &length, sizeof(uint8_t));
+		offset += sizeof(uint8_t);
+
+		memcpy(&tmpbuffer[offset], &wdsnbp.PXEClientPrompt, sizeof(uint8_t));
+		offset += sizeof(uint8_t);
+
+		// PXE Promt Done
+		option = WDSBP_OPT_PXE_PROMPT_DONE;
+		length = (uint8_t)sizeof(uint8_t);
+
+		memcpy(&tmpbuffer[offset], &option, sizeof(uint8_t));
+		offset += sizeof(uint8_t);
+
+		memcpy(&tmpbuffer[offset], &length, sizeof(uint8_t));
+		offset += sizeof(uint8_t);
+
+		memcpy(&tmpbuffer[offset], &wdsnbp.PXEPromptDone, sizeof(uint8_t));
+		offset += sizeof(uint8_t);
+
+		// Referal Server IP
+		if (wdsnbp.NextAction == 3)
 		{
-			/* TODO Assign types instead of hardcoding! */
-			char aprovalmsg[29] = {
-				WDSBP_OPT_NEXT_ACTION, 0x01, wdsnbp.NextAction,
-				WDSBP_OPT_REQUEST_ID, 0x04, 0x00, 0x00, 0x00, wdsnbp.RequestID,
-				WDSBP_OPT_POLL_INTERVAL, 0x02, 0x00, wdsnbp.PollIntervall,
-				WDSBP_OPT_POLL_RETRY_COUNT, 0x02, 0x00, wdsnbp.RetryCount,
-				WDSBP_OPT_ACTION_DONE, 0x01, wdsnbp.ActionDone,
-				WDSBP_OPT_VERSION_QUERY, 0x01, wdsnbp.VersionQuery,
-				WDSBP_OPT_PXE_CLIENT_PROMPT, 0x01, wdsnbp.PXEClientPrompt,
-				WDSBP_OPT_PXE_PROMPT_DONE, 0x01, wdsnbp.PXEPromptDone };
+			option = WDSBP_OPT_REFERRAL_SERVER;
+			length = (uint8_t)sizeof(uint32_t);
 
-			char admopt[2] = { 0xfa, sizeof(aprovalmsg) };
+			memcpy(&tmpbuffer[offset], &option, sizeof(uint8_t));
+			offset += sizeof(uint8_t);
 
-			memcpy(&RESPData[RESPsize], admopt, sizeof(admopt));
-			Set_Size(sizeof(admopt));
-
-			memcpy(&RESPData[RESPsize], aprovalmsg, sizeof(aprovalmsg));
-			Set_Size(sizeof(aprovalmsg));
+			memcpy(&tmpbuffer[offset], &length, sizeof(uint8_t));
+			offset += sizeof(uint8_t);
+			
+			memcpy(&tmpbuffer[offset], &wdsnbp.ReferalIP, sizeof(uint32_t));
+			offset += sizeof(uint32_t);
 		}
+
+		option = WDSBP_OPT_MESSAGE;
+		length = (uint8_t)strlen(WDS_MSG_LOOKING_FOR_POLICY);
+
+		memcpy(&tmpbuffer[offset], &option, sizeof(uint8_t));
+		offset += sizeof(uint8_t);
+
+		memcpy(&tmpbuffer[offset], &length, sizeof(uint8_t));
+		offset += sizeof(uint8_t);
+
+		strncpy(&tmpbuffer[offset], WDS_MSG_LOOKING_FOR_POLICY, strlen(WDS_MSG_LOOKING_FOR_POLICY));
+		offset += strlen(WDS_MSG_LOOKING_FOR_POLICY);
+
+		memcpy(&tmpbuffer[offset], DHCPEnd, sizeof(DHCPEnd));
+		offset += sizeof(uint8_t);
+
+		tmpbuffer[0] = 0xfa;
+
+		uint8_t realsize = offset - 2;
+		memcpy(&tmpbuffer[1], &realsize, sizeof(uint8_t));
+
+		memcpy(&RESPData[RESPsize], tmpbuffer, offset);
+		Set_Size(offset);
 	}
 			
 	/* End of DHCP-Options */

@@ -38,7 +38,6 @@ int GetClientRule(const unsigned char* MACb)
 	int Mode = Config.DefaultMode;
 	int Prompt = 0;
 	int i = 0;
-	int result = 0;
 	int found = 0;
 
 	FILE *fil = fopen(WDS_CLIENTS_FILE, "r");
@@ -146,31 +145,31 @@ int GetServerSettings()
 			if (fscanf(fil, "CurrentIDs: %d\n", &wdsnbp.RequestID) < 1)
 				wdsnbp.RequestID = 1;
 
-			if (fscanf(fil, "PollIntervall: %d\n", &Config.PollIntervall) < 1)
+			if (fscanf(fil, "PollIntervall: %hu\n", &Config.PollIntervall) < 1)
 				Config.PollIntervall = SETTINGS_DEFAULT_POLLINTERVALL;
 			
-			if (fscanf(fil, "TFTPRetryCount: %d\n", &Config.TFTPRetryCount) < 1)
+			if (fscanf(fil, "TFTPRetryCount: %hu\n", &Config.TFTPRetryCount) < 1)
 				Config.TFTPRetryCount = SETTINGS_DEFAULT_RETRYCOUNT;
 			
 			if (fscanf(fil, "AllowUnknownClients: %d\n", &Config.AllowUnknownClients) < 1)
 				Config.AllowUnknownClients = SETTINGS_DEFAULT_ALLOWUNKCLIENTS;
 
-			if (fscanf(fil, "VersionQuery: %d\n", &Config.VersionQuery) < 1)
+			if (fscanf(fil, "VersionQuery: %c\n", &Config.VersionQuery) < 1)
 				Config.VersionQuery = SETTINGS_DEFAULT_VERSIONQUERY;
 
 			if (fscanf(fil, "ShowClientRequests: %d\n", &Config.ShowClientRequests) < 1)
 				Config.ShowClientRequests = SETTINGS_DEFAULT_SHOWREQS;
 
-			if (fscanf(fil, "DefaultAction: %d\n", &Config.DefaultAction) < 1)
+			if (fscanf(fil, "DefaultAction: %c\n", &Config.DefaultAction) < 1)
 				Config.DefaultAction = WDSBP_OPTVAL_ACTION_ABORT;
 
 			if (fscanf(fil, "DefaultMode: %d\n", &Config.DefaultMode) < 1)
 				Config.DefaultMode = SETTINGS_DEFAULT_WDSMODE;
 
-			if (fscanf(fil, "PXEClientPrompt: %d\n", &Config.PXEClientPrompt) < 1)
+			if (fscanf(fil, "PXEClientPrompt: %c\n", &Config.PXEClientPrompt) < 1)
 				Config.PXEClientPrompt = WDSBP_OPTVAL_PXE_PROMPT_OPTIN;
 
-			if (fscanf(fil, "AllowServerSelection: %d\n", &Config.AllowServerSelection) < 1)
+			if (fscanf(fil, "AllowServerSelection: %c\n", &Config.AllowServerSelection) < 1)
 				Config.AllowServerSelection = 0;
 		}
 

@@ -292,4 +292,3 @@ int isValidDHCPType(int type)
 	return result;
 }
 
-

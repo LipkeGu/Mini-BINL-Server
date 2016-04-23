@@ -162,35 +162,39 @@ struct server_config
 	char server_root[255];
 
 	int NeedsApproval;
-	int PollIntervall;
-	int TFTPRetryCount;
-	int VersionQuery;
-	int AllowServerSelection;
+	uint16_t PollIntervall;
+	uint16_t TFTPRetryCount;
+	uint8_t VersionQuery;
+	uint8_t AllowServerSelection;
 	int DropUnkownClients;
 	int AllowUnknownClients;
-	int DefaultAction;
+	uint8_t DefaultAction;
 	int ShowClientRequests;
 	int DefaultMode;
-	int PXEClientPrompt;
+	uint8_t PXEClientPrompt;
 	int DHCPReqDetection;
 
 } Config;
 
 struct wdsparams
 {
-	int VersionQuery;
-	int ClientPrompt;
-	int ActionDone;
-	int Architecture;
-	int NextAction;
-	int PXEPromptDone;
-	int PXEClientPrompt;
+	uint8_t VersionQuery;
+	uint8_t ActionDone;
+	uint8_t NextAction;
+	uint8_t PXEPromptDone;
+	uint8_t PXEClientPrompt;
+	uint8_t AllowServerSelection;
 
-	int RequestID;
-	int ServerVersion;
+	uint16_t Architecture;
+	uint16_t RetryCount;
+	uint16_t PollIntervall;
+	uint16_t nbpversion;
 
-	int RetryCount;
-	int PollIntervall;
+	uint32_t ServerVersion;
+	uint32_t RequestID;
+	uint32_t ReferalIP;
+
+
 } wdsnbp;
 
 struct Client_Info
