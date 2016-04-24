@@ -226,12 +226,12 @@ static const uint8_t SMB_LMhash_Magic[8] =
 
 void auth_LMhash(uint8_t *dst, const uint8_t *pwd, const uint32_t pwdlen)
 {
-	uint32_t max14 = 0;
+	uint32_t max14 = 0, i;
 
 	uint8_t tmp_pwd[14] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 	max14 = pwdlen > 14 ? 14 : pwdlen;
 
-	for (uint32_t i = 0; i < max14; i++)
+	for (i = 0; i < max14; i++)
 		tmp_pwd[i] = pwd[i];
 
 	auth_DEShash(dst, tmp_pwd, SMB_LMhash_Magic);
