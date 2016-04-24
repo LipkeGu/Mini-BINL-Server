@@ -46,8 +46,7 @@ uint8_t GetClientRule(const uint8_t* MACb)
 		return 1;
 
 	while (!feof(fil) && found == 0)
-		if (fscanf(fil, "%X-%X-%X-%X-%X-%X | %d | %d | %d\n",
-			&MACa[0], &MACa[1], &MACa[2], &MACa[3], &MACa[4], &MACa[5], &Action, &Mode, &Prompt) > 3)
+		if (fscanf(fil, "%X-%X-%X-%X-%X-%X | %d | %d | %d\n", &MACa[0], &MACa[1], &MACa[2], &MACa[3], &MACa[4], &MACa[5], &Action, &Mode, &Prompt) > 3)
 		{
 			for (i = 0; i < 6; i++)
 				mac[i] = (unsigned char)MACa[i];

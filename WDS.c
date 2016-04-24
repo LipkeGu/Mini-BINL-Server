@@ -61,8 +61,10 @@ void logger(char* text)
 
 void handle_args(int data_len, char* Data[])
 {
+	int i;
+
 	if (data_len > 1)
-		for (int i = 0; i < data_len; i++)
+		for (i = 0; i < data_len; i++)
 		{
 			if (memcmp(Data[i], "-rootdir", 8) == 0) /* root Directory */
 				sprintf(Config.server_root, "%s", replace_str(Data[(i + 1)], "#", DS));
@@ -88,15 +90,17 @@ char* replace_str(const char* str, const char* old, const char* newchar)
 {
 	char* ret, *r;
 	const char* p, *q;
+	
+	size_t oldlen = strlen(old);
+	size_t count = 0, retlen = 0, newlen = strlen(newchar);
+
+	ptrdiff_t l = 0;
 
 	if (newchar == NULL || str == NULL || old == NULL)
 		return "\0";
 
 	if (strlen(str) >= 1 && strlen(newchar) >= 1 && strlen(old) >= 1)
 	{
-		size_t oldlen = strlen(old);
-		size_t count = 0, retlen = 0, newlen = strlen(newchar);
-
 		if (oldlen != newlen)
 		{
 			for (count = 0, p = str; (q = strstr(p, old)) != NULL; p = q + oldlen)
@@ -112,7 +116,7 @@ char* replace_str(const char* str, const char* old, const char* newchar)
 
 		for (r = ret, p = str; (q = strstr(p, old)) != NULL; p = q + oldlen)
 		{
-			ptrdiff_t l = q - p;
+			l = q - p;
 
 			memcpy(r, p, l);
 			r += l;
@@ -131,9 +135,9 @@ char* replace_str(const char* str, const char* old, const char* newchar)
 
 size_t ascii_to_utf16le(const char* src, char* dest, size_t offset)
 {
-	size_t ulen = 0;
+	size_t ulen = 0, i;
 
-	for (size_t i = 0; i < strlen(src); i++)
+	for (i = 0; i < strlen(src); i++)
 	{
 		dest[offset + ulen] = src[i];
 		ulen += 2;
@@ -200,11 +204,12 @@ int isZeroIP(const char* IP)
 
 int FindVendorOpt(const char* Buffer, size_t buflen, size_t offset)
 {
-	for (size_t i = offset; i < buflen; i = i + strlen(VENDORIDENT))
+	size_t i;
+
+	for (i = offset; i < buflen; i = i + strlen(VENDORIDENT))
 		if (i < buflen && offset < buflen)
 			if (memcmp(VENDORIDENT, &Buffer[i], strlen(VENDORIDENT)) == 0)
 				return 0;
-
 	return 1;
 }
 

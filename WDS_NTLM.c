@@ -350,8 +350,8 @@ static const uint8_t FinalPermuteMap[64] =
 
 static void Permute(unsigned char *dst, const unsigned char *src, const uint8_t *map, const int mapsize)
 {
-	int bitcount;
-	int i;
+	int bitcount = 0;
+	int i = 0;
 
 	for (i = 0; i < mapsize; i++)
 		dst[i] = 0;
