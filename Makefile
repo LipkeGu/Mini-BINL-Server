@@ -2,6 +2,7 @@ CC = gcc
 CFLAGS = -pthread
 all: WDSServer
 
+WDSServer: clean config Main.o WDS.o WDS_FileIO.o WDS_Request.o WDS_NTLM.o WDS_Socket.o WDS_RIS.o
 	$(CC) $(CFLAGS) Main.o WDS.o WDS_RIS.o WDS_FileIO.o WDS_Request.o WDS_NTLM.o WDS_Socket.o -o WDSServer
 
 main.o: Main.c
