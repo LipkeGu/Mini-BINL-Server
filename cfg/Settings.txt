@@ -1,0 +1,6 @@
+CurrentIDs: 41
+PollIntervall: 1
+TFTPRetryCount: 5
+AllowUnknownClients: 0
+ShowClientRequests: 0
+
