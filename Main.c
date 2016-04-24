@@ -20,24 +20,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 int main(int argc, char* argv[])
 {
-	Config.BOOTPPort = 4011;
-	Config.DHCPPort = 67;
-
 	Config.ReferalIP = 0;
 	Config.RouterIP = 0;
 
 	sprintf(Server.dnsdomain, "%s", WDS_DEFUALT_DOMAIN);
 
-	GetServerSettings();
-
 	wdsnbp.ActionDone = 0;
 	wdsnbp.NextAction = WDSBP_OPTVAL_ACTION_APPROVAL;
-	wdsnbp.PollIntervall = htons(Config.PollIntervall);
-	wdsnbp.RetryCount = htons(Config.TFTPRetryCount);
-	wdsnbp.RequestID = htonl(Server.RequestID);
-	wdsnbp.PXEClientPrompt = Config.PXEClientPrompt;
+	wdsnbp.PollIntervall = htons(5);
+	wdsnbp.RetryCount = htons(65535);
+	wdsnbp.RequestID = htonl(1);
+	wdsnbp.PXEClientPrompt = SETTINGS_DEFAULT_CLIENTPROMPT;
 	wdsnbp.PXEPromptDone = 0;
-	wdsnbp.VersionQuery = Config.VersionQuery;
 
 	Config.DHCPReqDetection = SETTINGS_DEFAULT_DHCPMODE;
 

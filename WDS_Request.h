@@ -128,6 +128,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 int GetPacketType(int con, char* Data, size_t Datalen);
-int Handle_DHCP_Request(int con, char* Data, int found, int mode);
-int GetClientinfo(int arch, unsigned char* hwadr, int found);
+int Handle_DHCP_Request(int con, const char* Data, uint8_t found, uint8_t mode);
+void GetBootFile(uint16_t arch);
+uint8_t GetClientinfo(uint16_t arch, uint8_t* hwadr, uint8_t found);
 #endif

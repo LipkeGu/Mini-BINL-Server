@@ -17,17 +17,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
 
 #include "WDS.h"
+#pragma warning(disable: 4100)
 
-int CreateSocketandBind(int port, int SocketType, int AddressFamiliy, int Protocol)
+int CreateSocketandBind(uint16_t port, int SocketType, int AddressFamiliy, int Protocol)
 {
-	char enabled[1] = { 0x01 };
+	int enabled = 1;
 	int sockfd = socket(AddressFamiliy, SocketType, Protocol);
 	struct sockaddr_in _lsock;
 
 	if (sockfd != SOCKET_ERROR)
 	{
-		if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, enabled, sizeof(int)) == 0 &&
-			setsockopt(sockfd, SOL_SOCKET, SO_BROADCAST, enabled, sizeof(int)) == 0)
+		if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, (const char*)&enabled, sizeof(int)) == 0 &&
+			setsockopt(sockfd, SOL_SOCKET, SO_BROADCAST, (const char*)&enabled, sizeof(int)) == 0)
 		{
 			memset(&_lsock, 0, sizeof(_lsock));
 			
@@ -62,10 +63,11 @@ int CreateSocketandBind(int port, int SocketType, int AddressFamiliy, int Protoc
 	return sockfd;
 }
 
+
 #ifdef _WIN32
-	DWORD WINAPI DHCP_Thread()
+DWORD WINAPI DHCP_Thread(void* lpParams)
 #else
-	void DHCP_Thread()
+void DHCP_Thread()
 #endif
 {
 	memset(&bfrom, 0, sizeof(bfrom));
@@ -75,23 +77,23 @@ int CreateSocketandBind(int port, int SocketType, int AddressFamiliy, int Protoc
 
 	if (sockfd == SOCKET_ERROR)
 	{
+		Retval = sockfd;
+
 		sprintf(logbuffer, "[E] DHCP_Thread(): Unable to create Socket (Error: %s)\n", strerror(errno));
 		logger(logbuffer);
-
-		exit(errno);
 	}
 	else
-		Retval = listening("DHCP", sockfd, 1);
+		Retval = listening(sockfd, 1);
 
-#ifdef _WIN32
+#ifdef  _WIN32
 	return Retval;
-#endif	
+#endif //  _WIN32
 }
 
 #ifdef _WIN32
-	DWORD WINAPI BOOTP_Thread()
+DWORD WINAPI BOOTP_Thread(void* lpParams)
 #else
-	void BOOTP_Thread()
+void BOOTP_Thread()
 #endif
 {
 	memset(&from, 0, sizeof(from));
@@ -107,23 +109,28 @@ int CreateSocketandBind(int port, int SocketType, int AddressFamiliy, int Protoc
 		logger(logbuffer);
 	}
 	else
-		Retval = listening("BOOTP", sockfd, 0);
+		Retval = listening(sockfd, 0);
 
-#ifdef _WIN32
+#ifdef  _WIN32
 	return Retval;
 #endif
 }
 
-int bootp_start()
-{
-	int Retval = 0;
+	int bootp_start()
+	{
+		int Retval = 0;
 
 #ifdef _WIN32
-	WSADATA wsa;
-	DWORD myThreadID;
-	HANDLE ThreadID;
+		WSADATA wsa;
+		DWORD myThreadID;
+		HANDLE ThreadID;
 
-	Retval = WSAStartup(MAKEWORD(2, 0), &wsa);
+		Retval = WSAStartup(MAKEWORD(2, 2), &wsa);
+		if (Retval != 0)
+		{
+			printf("Failed to WinSock Context! (Error: %d)\n", WSAGetLastError());
+			return WSAGetLastError();
+		}
 #else
 	pthread_t myThreadID;
 #endif
@@ -132,17 +139,18 @@ int bootp_start()
 
 	Config.ServerIP = IP2Bytes(hostname_to_ip(Server.nbname));
 
-	/* DHCP Thread (Handle this in Background) */
-
 #ifdef _WIN32
-	ThreadID = CreateThread(0, 0, &DHCP_Thread, 0, 0, &myThreadID);
+	ThreadID = CreateThread(0, 0, &DHCP_Thread, NULL, 0, &myThreadID);
+	if (ThreadID == NULL)
+		printf("Failed to create DHCP-Thread!\n");
 #else
 	Retval = pthread_create(&myThreadID, 0, &DHCP_Thread, NULL);
 #endif
-	BOOTP_Thread();
+	BOOTP_Thread(NULL);
 
 #ifdef _WIN32
-	CloseHandle(ThreadID);
+	if (ThreadID != NULL)
+		CloseHandle(ThreadID);
 #else
 	pthread_exit(&myThreadID);
 #endif
@@ -150,15 +158,17 @@ int bootp_start()
 	return Retval;
 }
 
-int listening(const char* Context, int con, int mode)
+int listening(int con, uint8_t mode)
 {
 	int Retval = 1;
 	char Buffer[DHCP_BUFFER_SIZE];
+	uint8_t found = 0;
+
 	uint32_t PacketSize = 0, MessageType = 0;
 
 	while (Retval != SOCKET_ERROR)
 	{
-		ZeroOut(Buffer, sizeof(Buffer));
+		memset(Buffer, 0, sizeof(Buffer));
 
 		if (mode == 0)
 		{
@@ -186,24 +196,12 @@ int listening(const char* Context, int con, int mode)
 				else
 					Client.isWDSRequest = 0;
 				
-				if (Client.isWDSRequest == 1 && mode == 0)
-				{
+				if (Client.isWDSRequest == 1 && wdsnbp.ActionDone == 0)
 					memcpy(&Client.hw_address, &Buffer[BOOTP_OFFSET_MACADDR], Buffer[BOOTP_OFFSET_MACLEN]);
-
-					if (wdsnbp.ActionDone == 1)
-						Retval = Handle_DHCP_Request(con, Buffer, GetClientinfo(Buffer[BOOTP_OFFSET_SYSARCH], Client.hw_address,
-							GetClientRule(Client.hw_address)), mode);
-
-					wdsnbp.ActionDone = 1;
-				}
 				else
-				{
-					Client.isWDSRequest = 0;
-					wdsnbp.ActionDone = 0;
-					wdsnbp.PXEPromptDone = 0;
+					found = GetClientinfo(Buffer[BOOTP_OFFSET_SYSARCH], Client.hw_address, GetClientRule(Client.hw_address));
 
-					Retval = Handle_DHCP_Request(con, Buffer, 0, mode);
-				}
+				Retval = Handle_DHCP_Request(con, Buffer, found, mode);
 			}
 			break;
 		default:
@@ -234,7 +232,7 @@ int listening(const char* Context, int con, int mode)
 	return Retval;
 }
 
-int Send(int con, char* data, size_t length, int mode)
+int Send(int con, const char* data, size_t length, uint8_t mode)
 {
 	int Retval = 0;
 
@@ -242,7 +240,7 @@ int Send(int con, char* data, size_t length, int mode)
 		Retval = sendto(con, data, length, 0, (struct sockaddr*)&from, sizeof(from));
 	else
 	{
-		bfrom.sin_addr.s_addr = inet_addr(BROADCAST_ADDR);
+		bfrom.sin_addr.s_addr = inet_addr(BROADCAST_ADDR); /* As Target IP Address !!! */
 		Retval = sendto(con, data, length, 0, (struct sockaddr*)&bfrom, sizeof(bfrom));
 	}
 

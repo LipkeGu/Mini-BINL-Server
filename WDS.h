@@ -151,9 +151,6 @@ static __inline void eol(FILE *fd);
 
 struct server_config
 {
-	short BOOTPPort;
-	short DHCPPort;
-
 	uint32_t ServerIP;
 	uint32_t ReferalIP;
 	uint32_t RouterIP;
@@ -198,13 +195,13 @@ struct wdsparams
 
 struct Client_Info
 {
-	unsigned char hw_address[6];
-	unsigned char IPAddress[4];
-
 	char Bootfile[128];
 	char BCDPath[64];
 
-	int ClientArch;
+	uint8_t hw_address[6];
+	uint8_t IPAddress[4];
+	
+	uint16_t ClientArch;
 	int Version;
 	int WDSMode;
 	int Handled;
@@ -222,24 +219,25 @@ struct Server_Info
 	uint32_t RequestID;
 } Server;
 
-uint32_t IP2Bytes(const char* IP_address);
-uint32_t RESPtype;
-
-size_t RESPsize;
-size_t ascii_to_utf16le(const char* src, char* dest, size_t offset);
 
 char RESPData[4096], logbuffer[1024];
 char* replace_str(const char* str, const char* old, const char* newchar);
 
 const char* hostname_to_ip(const char* hostname);
 
-unsigned char eop;
-unsigned char get_string(FILE *fd, char* dest, size_t size);
+uint8_t eop;
+uint8_t get_string(FILE *fd, char* dest, size_t size);
+uint8_t setDHCPRespType();
 
 int isValidDHCPType(int type);
-int setDHCPRespType(int found, int mode);
-int isZeroIP(char* IP);
+int isZeroIP(const char* IP);
 int FindVendorOpt(const char* Buffer, size_t buflen, size_t offset);
+
+uint32_t IP2Bytes(const char* IP_address);
+uint32_t RESPtype;
+
+size_t RESPsize;
+size_t ascii_to_utf16le(const char* src, char* dest, size_t offset);
 
 void handle_args(int data_len, char* Data[]);
 void logger(char* text);
@@ -247,7 +245,5 @@ void Set_Type(uint32_t NewType);
 void Set_Size(size_t Newsize);
 void Set_EoP(unsigned char neweop);
 void Set_PKTLength();
-void print_values(int data_len, char* Data[]);
-void ZeroOut(void* Buffer, size_t length);
 
 #endif /* WDS_H_ */

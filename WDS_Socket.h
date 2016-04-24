@@ -37,18 +37,18 @@ int socketlen;
 struct sockaddr_in from;
 struct sockaddr_in bfrom;
 
-int listening(const char* Context, int con, int mode);
-#ifndef _WIN32
+int listening(int con, uint8_t mode);
+#ifdef _WIN32
+DWORD WINAPI DHCP_Thread(void* lpParams);
+DWORD WINAPI BOOTP_Thread(void* lpParams);
+#else
 void DHCP_Thread();
 void BOOTP_Thread();
-#else
-DWORD WINAPI DHCP_Thread();
-DWORD WINAPI BOOTP_Thread();
-#endif
 
-int CreateSocketandBind(int port, int SocketType, int AddressFamiliy, int Protocol);
+#endif
+int CreateSocketandBind(uint16_t port, int SocketType, int AddressFamiliy, int Protocol);
 
 int bootp_start();
-int Send(int con, char* buf, size_t len, int mode);
+int Send(int con, const char* buffer, size_t len, uint8_t mode);
 
 #endif /* WDS_SOCKET_H_ */

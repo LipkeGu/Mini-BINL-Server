@@ -21,18 +21,18 @@ int Exist(const char* Filename)
 	FILE *fil = fopen(Filename, "r");
 
 	if (fil != NULL)
-		if (fclose(fil) == 0)
-			return 0;
-		else
-			return 1;
+		return fclose(fil);
 	else
 		return 1;
 }
 
-int GetClientRule(const unsigned char* MACb)
+uint8_t GetClientRule(const uint8_t* MACb)
 {
-	unsigned int MACa[6];
-	unsigned char mac[6];
+	uint32_t MACa[6];
+	uint8_t mac[6];
+
+	memset(mac, 0, sizeof(mac));
+	memset(MACa, 0, sizeof(MACa));
 
 	int Action = Config.DefaultAction;
 	int Mode = Config.DefaultMode;
@@ -41,8 +41,6 @@ int GetClientRule(const unsigned char* MACb)
 	int found = 0;
 
 	FILE *fil = fopen(WDS_CLIENTS_FILE, "r");
-
-	ZeroOut(mac, sizeof(mac));
 
 	if (fil == NULL)
 		return 1;
@@ -129,52 +127,4 @@ int GetClientRule(const unsigned char* MACb)
 
 			return 1;
 		}	
-}
-
-int GetServerSettings()
-{
-	FILE *fil = fopen(WDS_SETTINGS_FILE, "r");
-
-	if (fil != NULL)
-	{
-		while (!feof(fil))
-		{
-			if (fscanf(fil, "DropUnkownClients: %d\n", &Config.DropUnkownClients) < 1)
-				Config.DropUnkownClients = 0;
-
-			if (fscanf(fil, "CurrentIDs: %d\n", &Server.RequestID) < 1)
-				Server.RequestID = htonl(1);
-
-			if (fscanf(fil, "PollIntervall: %hu\n", &Config.PollIntervall) < 1)
-				Config.PollIntervall = htons(SETTINGS_DEFAULT_POLLINTERVALL);
-			
-			if (fscanf(fil, "TFTPRetryCount: %hu\n", &Config.TFTPRetryCount) < 1)
-				Config.TFTPRetryCount = htons(SETTINGS_DEFAULT_RETRYCOUNT);
-			
-			if (fscanf(fil, "AllowUnknownClients: %d\n", &Config.AllowUnknownClients) < 1)
-				Config.AllowUnknownClients = SETTINGS_DEFAULT_ALLOWUNKCLIENTS;
-
-			if (fscanf(fil, "VersionQuery: %c\n", &Config.VersionQuery) < 1)
-				Config.VersionQuery = SETTINGS_DEFAULT_VERSIONQUERY;
-
-			if (fscanf(fil, "ShowClientRequests: %d\n", &Config.ShowClientRequests) < 1)
-				Config.ShowClientRequests = SETTINGS_DEFAULT_SHOWREQS;
-
-			if (fscanf(fil, "DefaultAction: %c\n", &Config.DefaultAction) < 1)
-				Config.DefaultAction = WDSBP_OPTVAL_ACTION_ABORT;
-
-			if (fscanf(fil, "DefaultMode: %d\n", &Config.DefaultMode) < 1)
-				Config.DefaultMode = SETTINGS_DEFAULT_WDSMODE;
-
-			if (fscanf(fil, "PXEClientPrompt: %c\n", &Config.PXEClientPrompt) < 1)
-				Config.PXEClientPrompt = WDSBP_OPTVAL_PXE_PROMPT_OPTIN;
-
-			if (fscanf(fil, "AllowServerSelection: %c\n", &Config.AllowServerSelection) < 1)
-				Config.AllowServerSelection = 0;
-		}
-
-		return fclose(fil);
-	}
-	else
-		return 1;
 }

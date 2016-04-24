@@ -27,17 +27,12 @@ void Set_Type(uint32_t NewType)
 	Set_Size(sizeof(NewType));
 }
 
-void ZeroOut(void* Buffer, size_t length)
-{
-	bzero(Buffer, length);
-}
-
 void Set_Size(size_t Newsize)
 {
 	RESPsize += Newsize;
 }
 
-void Set_EoP(unsigned char neweop)
+void Set_EoP(uint8_t neweop)
 {
 	eop = neweop;
 }
@@ -45,7 +40,7 @@ void Set_EoP(unsigned char neweop)
 void Set_PKTLength()
 {
 	uint32_t _tmp = SWAB32(RESPsize);
-	memcpy(&RESPData[4], &_tmp, 4);
+	memcpy(&RESPData[4], &_tmp, sizeof(uint32_t));
 }
 
 void logger(char* text)
@@ -64,21 +59,10 @@ void logger(char* text)
 #endif
 }
 
-void print_values(int data_len, char* Data[])
-{
-	int i = 0;
-
-	if (data_len > 1)
-		for (i = 0; i < data_len; i++)
-			printf("[D] Value %d: %s\n", i, Data[i]);
-}
-
 void handle_args(int data_len, char* Data[])
 {
-	int i = 0;
-
 	if (data_len > 1)
-		for (i = 0; i < data_len; i++)
+		for (int i = 0; i < data_len; i++)
 		{
 			if (memcmp(Data[i], "-rootdir", 8) == 0) /* root Directory */
 				sprintf(Config.server_root, "%s", replace_str(Data[(i + 1)], "#", DS));
@@ -147,9 +131,9 @@ char* replace_str(const char* str, const char* old, const char* newchar)
 
 size_t ascii_to_utf16le(const char* src, char* dest, size_t offset)
 {
-	size_t ulen = 0, i = 0, len = strlen(src);
+	size_t ulen = 0;
 
-	for (i = 0; i < len; i++)
+	for (size_t i = 0; i < strlen(src); i++)
 	{
 		dest[offset + ulen] = src[i];
 		ulen += 2;
@@ -160,24 +144,13 @@ size_t ascii_to_utf16le(const char* src, char* dest, size_t offset)
 
 const char* hostname_to_ip(const char* hostname)
 {
-	struct hostent *he;
-	struct in_addr **addr_list;
-
-	int i = 0;
-
-	he = gethostbyname(hostname);
-	addr_list = (struct in_addr **) he->h_addr_list;
-
-	for (i = 0; addr_list[i] != NULL; i++)
-		return inet_ntoa(*addr_list[i]);
-
-	return NULL;
+	return inet_ntoa(**(struct in_addr**)gethostbyname(hostname)->h_addr_list);
 }
 
-unsigned char get_string(FILE *fd, char* dest, size_t size)
+uint8_t get_string(FILE *fd, char* dest, size_t size)
 {
-	unsigned int i = 0;
-	unsigned char c = 0;
+	uint32_t i = 0;
+	uint8_t c = 0;
 
 	while (i < size)
 	{
@@ -203,14 +176,9 @@ uint32_t IP2Bytes(const char* IP_address)
 	return ipvalue.s_addr;
 }
 
-int setDHCPRespType(int found, int mode)
+uint8_t setDHCPRespType()
 {
-#ifndef _WIN32	/* avoid the GCC Unused Warning */
-	mode = mode;
-	found = found;
-#endif
-
-	int Retval = DHCPOFFER;
+	uint8_t Retval = DHCPOFFER;
 		
 	if (Client.lastDHCPType == DHCPDISCOVER)
 		Retval = DHCPOFFER;
@@ -223,21 +191,16 @@ int setDHCPRespType(int found, int mode)
 	return Retval;
 }
 
-int isZeroIP(char* IP)
+int isZeroIP(const char* IP)
 {
-	char ZeroIP[IPV4_ADDR_LENGTH] = { 0x00, 0x00, 0x00, 0x00 };
+	uint32_t ZeroIP = 0;
 	
-	if (memcmp(IP, ZeroIP , IPV4_ADDR_LENGTH) == 0)
-		return 0;
-	else
-		return 1;
+	return memcmp(IP, &ZeroIP, sizeof(uint32_t));
 }
 
 int FindVendorOpt(const char* Buffer, size_t buflen, size_t offset)
 {
-	size_t i = offset;
-
-	for (i; i < buflen; i = i + strlen(VENDORIDENT))
+	for (size_t i = offset; i < buflen; i = i + strlen(VENDORIDENT))
 		if (i < buflen && offset < buflen)
 			if (memcmp(VENDORIDENT, &Buffer[i], strlen(VENDORIDENT)) == 0)
 				return 0;

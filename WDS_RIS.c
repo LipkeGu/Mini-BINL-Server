@@ -167,7 +167,7 @@ int find_drv(uint16_t cvid, uint16_t cpid, DRIVER *drv)
 
 	if (Exist(NIC_DRIVER_LIST_FILE) == 0)
 	{
-		uint32_t vid, pid;
+		uint16_t vid = 0, pid = 0;
 		char buffer[1024];
 
 		FILE *fd = fopen(NIC_DRIVER_LIST_FILE, "r");
@@ -177,20 +177,21 @@ int find_drv(uint16_t cvid, uint16_t cpid, DRIVER *drv)
 		else
 			while (found == 0)
 			{
-				if (fread(buffer, 1, 4, fd) != 4)
+				if (fread(buffer, 1, sizeof(uint32_t), fd) != sizeof(uint32_t))
 					break;
 
-				buffer[4] = 0;
-				sscanf(buffer, "%x2", &vid);
+				buffer[sizeof(uint32_t)] = 0;
+				
+				sscanf(buffer, "%hu2", &vid);
 				skipspaces(fd);
 
 				if (cvid == vid)
 				{
-					if (fread(buffer, 1, 4, fd) != 4)
+					if (fread(buffer, 1, sizeof(uint32_t), fd) != sizeof(uint32_t))
 						break;
 
-					buffer[4] = 0;
-					sscanf(buffer, "%x2", &pid);
+					buffer[sizeof(uint32_t)] = 0;
+					sscanf(buffer, "%hu2", &pid);
 
 					skipspaces(fd);
 
