@@ -29,10 +29,11 @@ static __inline void skipspaces(FILE *fd)
 		if (fread(&c, 1, sizeof(c), fd) != sizeof(c))
 			break;
 }
+
 #ifndef _WIN32
-	static inline void eol(FILE *fd)
+static inline void eol(FILE *fd)
 #else
-	static __inline void eol(FILE *fd)
+static __inline void eol(FILE *fd)
 #endif
 {
 	unsigned char c = 0;
@@ -42,7 +43,282 @@ static __inline void skipspaces(FILE *fd)
 			break;
 }
 
-int Handle_NCQ_Request(int con, char* Data, size_t Packetlen)
+int Handle_OSC_Request(int con, char* Data, uint8_t mode, size_t Packetlen)
+{
+#define PKT_RSU			0x55535282
+#define OSCFileOffset	36
+	sprintf(logbuffer, "======= RIS (OSChooser) =======\n");
+	logger(logbuffer);
+
+	size_t NameLength = (Packetlen - OSCFileOffset) - 1;
+	char OSCFile[256] = "";
+	char OSCName[10] = "";
+	char OSCContent[2048] = "";
+	time_t t;
+
+	Set_Type(PKT_RSU);
+	Set_Size(4);
+
+	memcpy(&RESPData[RESPsize], &Data[0x8], 28);
+	Set_Size(28);
+
+	if (NameLength == 0) /*  welcome.osc is requested! */
+	{
+		sprintf(OSCContent, "<OSCML> \
+		<META KEY=\"F3\" ACTION=\"REBOOT\"><META KEY=\"ENTER\" HREF=\"LOGIN\"><TITLE>%s</TITLE><FOOTER>[F3] restart computer [ENTER] Continue</FOOTER> \
+		<BODY left=5 right=75><BR>%s</BODY></OSCML>", OSCHOOSER_TITLE, OSCHOOSER_WELCOME);
+
+		printf("[D]FILE: WELCOME.osc\n");
+	}
+	else
+	{
+		memcpy(OSCName, &Data[36], NameLength);
+		sprintf(OSCFile, "%s%s%s.osc", Config.server_root, Config.OSCBasePath, OSCName);
+
+		printf("FILE: %s.osc\n", OSCName);
+
+		if (Exist(OSCFile) != 0)
+		{
+			sprintf(OSCContent, "<OSCML> \
+			<META KEY=\"F3\" ACTION=\"REBOOT\"><META KEY=\"ENTER\" HREF=\"LOGIN\"><TITLE>%s</TITLE><FOOTER>[F3] restart computer [ENTER] Continue</FOOTER> \
+			<BODY left=5 right=75><BR>%s</BODY></OSCML>", OSCHOOSER_TITLE, OSCHOOSER_NOTFOUND);
+
+			sprintf(logbuffer, "ERROR: File not found: %s\n", OSCFile);
+			logger(logbuffer);
+		}
+		else
+			Read(OSCFile, OSCContent, sizeof OSCContent);
+	}
+
+	t = time(NULL);
+
+	if (strlen(OSCContent) >= 21)
+	{
+		sprintf(OSCContent, "%s", replace_str(OSCContent, "%ServerUTCFileTime%", (char *)(int)&t));
+		sprintf(OSCContent, "%s", replace_str(OSCContent, "%SERVERNAME%", Server.nbname));
+		sprintf(OSCContent, "%s", replace_str(OSCContent, "%SERVERDOMAIN%", Server.nbdomain));
+		sprintf(OSCContent, "%s%d", replace_str(OSCContent, "%MACHINENAME%", Client.HostName), Server.RequestID);
+	}
+
+	memcpy(&RESPData[RESPsize], OSCContent, strlen(OSCContent));
+	Set_Size(strlen(OSCContent));
+
+	Set_EoP(0x00);
+	Set_PKTLength();
+
+	Send(con, RESPData, RESPsize, mode);
+
+	sprintf(logbuffer, "===============================\n");
+	logger(logbuffer);
+
+	return 0;
+}
+
+int Handle_NTLMSSP_Request(int con, char* Data, uint8_t mode, size_t Packetlen)
+{
+#define PKT_CHA		0x4c484382
+#define PKT_RES		0x53455282
+
+
+	char Response[1024] = "";
+	char Signature[8] = NTLMSSP_MESSAGE_HEADER;
+
+	uint32_t Offset = 0;
+	uint32_t Header = 0;
+	uint32_t result = 0;
+	uint32_t Indicator = 0;
+	uint32_t ServerFlags = 0x00018206; /* ntlm v1 */
+	uint32_t TargetNameBuffer = 0x00000030;
+	uint32_t TargetInfoBuffer = 0x00000030;
+
+	/* TODO: REWRITE algoritm for this crap */
+	uint8_t challenge[8];
+	size_t length = 0;
+
+	generate_challenge(challenge, inet_ntoa(from.sin_addr));
+
+	char Reserved[8];
+	memset(Reserved, 0, sizeof(Reserved));
+
+	char auth_u1[8] = { NTVER_MAJOR, NTVER_MINOR, 0xCE, 0x0E, 0x00, 0x00, 0x00, NTLMSSP_VER };
+
+	unsigned char output[24] = "";
+
+	nt_response(output, Config.Password, challenge);
+
+	int MessageType = 0, retval = 0, auth_result = 1;
+	memcpy(&MessageType, &Data[16], 1);
+
+	sprintf(logbuffer, "======= RIS (NTLMSSP) =======\n");
+	logger(logbuffer);
+
+	switch (MessageType)
+	{
+	case NTLMSSP_NEGOTIATE:
+		sprintf(logbuffer, "TYPE: NEG (%d)\n", MessageType);
+		logger(logbuffer);
+
+		Header = SWAB32(PKT_CHA);
+		Indicator = 2;
+
+		char Payload[256] = "";
+		size_t payloadoffset = 0;
+
+		/* Netbios DomainName */
+		uint16_t TypeDomainName = 0x0200;
+		length = ascii_to_utf16le(Server.nbdomain, Payload, (payloadoffset + 8));
+
+		memcpy(&Payload[payloadoffset], &TypeDomainName, sizeof(TypeDomainName));
+		payloadoffset += 2;
+
+		memcpy(&Payload[payloadoffset], &length, sizeof(length));
+		payloadoffset += 3;
+
+		/* Server Name */
+		uint16_t TypeServerName = 0x0100;
+		length = ascii_to_utf16le(Server.nbname, Payload, (payloadoffset + 4));
+
+		memcpy(&Payload[payloadoffset], &TypeServerName, sizeof(TypeServerName));
+		payloadoffset += 2;
+
+		memcpy(&Payload[payloadoffset], &length, sizeof(length));
+		payloadoffset += 3;
+
+		/* DNS Domain Name */
+		uint16_t TypeDNSDomain = 0x0300;
+		length = ascii_to_utf16le(Server.dnsdomain, Payload, (payloadoffset + 4));
+
+		memcpy(&Payload[payloadoffset], &TypeDNSDomain, sizeof(TypeDNSDomain));
+		payloadoffset += 2;
+
+		memcpy(&Payload[payloadoffset], &length, sizeof(length));
+		payloadoffset += 3;
+
+		/* DNS Host Name */
+		uint16_t TypeDNSHostName = 0x0400;
+		length = ascii_to_utf16le(Server.dnshostname, Payload, (payloadoffset + 4));
+
+		memcpy(&Payload[payloadoffset], &TypeDNSHostName, sizeof(TypeDNSHostName));
+		payloadoffset += 2;
+
+		memcpy(&Payload[payloadoffset], &length, sizeof(length));
+		payloadoffset += 3;
+
+		uint32_t Terminator = 0;
+		memcpy(&Payload[payloadoffset], &Terminator, sizeof(Terminator));
+		payloadoffset += 2;
+
+		memcpy(&Response[Offset], &Header, sizeof(Header));
+		Offset += (sizeof(Header) + 4);
+
+		memcpy(&Response[Offset], Signature, sizeof(Signature));
+		Offset += sizeof(Signature);
+
+		memcpy(&Response[Offset], &Indicator, sizeof(Indicator));
+		Offset += sizeof(Indicator) + 2;
+
+		uint16_t len = ((uint16_t)strlen(Server.nbdomain) * 2);
+		memcpy(&Response[Offset], &len, sizeof(len));
+		Offset += sizeof(len);
+
+		memcpy(&Response[Offset], &len, sizeof(len));
+		Offset += sizeof(len);
+
+		memcpy(&Response[Offset], &TargetNameBuffer, sizeof(TargetNameBuffer));
+		Offset += sizeof(TargetNameBuffer);
+
+		memcpy(&Response[Offset], &ServerFlags, sizeof(ServerFlags));
+		Offset += sizeof(ServerFlags);
+
+		// Challenge
+		memcpy(&Response[Offset], challenge, sizeof(challenge));
+		Offset += sizeof(challenge);
+
+		// Reserved
+		memcpy(&Response[Offset], Reserved, sizeof(Reserved));
+		Offset += sizeof(Reserved);
+
+		// Targetinfo Buffer
+		memcpy(&Response[Offset], &TargetInfoBuffer, sizeof(TargetInfoBuffer));
+		Offset += sizeof(TargetInfoBuffer);
+
+		ascii_to_utf16le(Server.nbdomain, Response, Offset);
+		Offset += (strlen(Server.nbdomain) * 2);
+
+		memcpy(&Response[Offset], Payload, payloadoffset);
+		Offset += payloadoffset;
+
+		memcpy(&Response[4], &Offset, sizeof(Offset));
+
+		break;
+	case NTLMSSP_AUTH:
+		sprintf(logbuffer, "TYPE: Authenticate (%d)\n", MessageType);
+		logger(logbuffer);
+
+		if (Data[36] != 0)
+		{
+			printf("[D]: Client provides Domain info.\n");
+
+			if (Data[52] <= Data[54])
+				auth_result = memcmp(&Data[Data[9]], Server.nbdomain, Data[36]);
+			else
+				auth_result = 1;
+		}
+
+		if (Data[52] != 0)
+		{
+			printf("[D]: Client provides User info.\n");
+
+			if (Data[36] <= Data[38])
+				auth_result = memcmp(&Data[Data[4]], Server.UserName, Data[Data[24]]);
+			else
+				auth_result = 1;
+		}
+		
+		if (auth_result == 0)
+			result = STATUS_SUCCESS;
+		else
+			result = STATUS_LOGON_FAILURE;
+
+		Header = SWAB32(PKT_RES);
+		Offset = 0;
+
+		memcpy(&Response[Offset], &Header, sizeof(Header));
+		Offset += sizeof(Header) + 1;
+
+		memcpy(&Response[Offset], &result, sizeof(result));
+		Offset += sizeof(result);
+
+		break;
+	default:
+		return 0;
+		break;
+	}
+
+	retval = Send(con, Response, Offset, mode);
+
+	sprintf(logbuffer, "===============================\n");
+	logger(logbuffer);
+
+	return retval;
+}
+
+int Handle_OFF_Request(int con, char* Data, uint8_t mode, size_t Packetlen)
+{
+	return 1;
+}
+
+int Handle_REQ_Request(int con, char* Data, uint8_t mode, size_t Packetlen)
+{
+	return 1;
+}
+
+int Handle_UNR_Request(int con, char* Data, uint8_t mode, size_t Packetlen)
+{
+	return 1;
+}
+
+int Handle_NCQ_Request(int con, char* Data, uint8_t mode, size_t Packetlen)
 {
 	int Retval = 1;
 
@@ -154,7 +430,7 @@ int Handle_NCQ_Request(int con, char* Data, size_t Packetlen)
 
 		Retval = Send(con, packet, offset, 0);
 	}
-	
+
 	if (Retval > 1)
 		Retval = 0;
 
@@ -181,7 +457,7 @@ int find_drv(uint16_t cvid, uint16_t cpid, DRIVER *drv)
 					break;
 
 				buffer[sizeof(uint32_t)] = 0;
-				
+
 				sscanf(buffer, "%hu2", &vid);
 				skipspaces(fd);
 
@@ -220,7 +496,7 @@ int find_drv(uint16_t cvid, uint16_t cpid, DRIVER *drv)
 				else
 					continue;
 			}
-		
+
 		fclose(fd);
 	}
 	else

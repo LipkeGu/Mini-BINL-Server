@@ -22,7 +22,15 @@ int main(int argc, char* argv[])
 {
 	Config.ReferalIP = 0;
 	Config.RouterIP = 0;
+	Config.NTLMV2Enabled = 0;
+	Config.DHCPReqDetection = SETTINGS_DEFAULT_DHCPMODE;
+	Config.ShowClientRequests = 1;
 
+	Client.WDSMode = 1;
+	sprintf(Client.HostName, "%s", "Client");
+
+	sprintf(Server.UserName, "%s", "root");
+	sprintf(Server.nbdomain, "%s", "LOCALDOMAIN");
 	sprintf(Server.dnsdomain, "%s", WDS_DEFUALT_DOMAIN);
 
 	wdsnbp.ActionDone = 0;
@@ -33,15 +41,11 @@ int main(int argc, char* argv[])
 	wdsnbp.PXEClientPrompt = SETTINGS_DEFAULT_CLIENTPROMPT;
 	wdsnbp.PXEPromptDone = 0;
 
-	Config.DHCPReqDetection = SETTINGS_DEFAULT_DHCPMODE;
-
-	Client.WDSMode = 1;
-
-	Config.ShowClientRequests = 1;
+	sprintf(Config.Password, "%s", "secret");
 	sprintf(Config.server_root, "%s", replace_str(WDS_SERVER_ROOT, "#", DS));
+	sprintf(Config.OSCBasePath, "%s", replace_str("#OSChooser#english#", "#", DS));
 
 	handle_args(argc, argv);
-
 #ifndef _WIN32
 	pid_t mainpid = fork();
 

@@ -128,3 +128,41 @@ uint8_t GetClientRule(const uint8_t* MACb)
 			return 1;
 		}	
 }
+
+int Write(const char* Filename, const char* Data, size_t Length)
+{
+	int res = 1;
+
+	if (Length > 0)
+	{
+		FILE *fil = fopen(Filename, "w");
+
+		if (fil != NULL)
+			if (fwrite(Data, sizeof(char), Length, fil) == 0)
+				res = errno;
+			else
+			{
+				sprintf(logbuffer, "[S] Error while writing the File: %s (%d) ", Filename, errno);
+				logger(logbuffer);
+			}
+
+		if (fil != NULL)
+			fclose(fil);
+	}
+
+	return errno;
+}
+
+int Read(const char* Filename, char* dest, size_t Length)
+{
+	int res = 1;
+	FILE *fil = fopen(Filename, "r");
+
+	if ((fil != NULL) && (fread(dest, 1, Length, fil) == 0))
+	{
+		fclose(fil);
+		res = 0;
+	}
+
+	return res;
+}

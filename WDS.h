@@ -73,6 +73,7 @@ static __inline void eol(FILE *fd);
 #include "WDS_Socket.h"
 #include "WDS_Request.h"
 #include "WDS_FileIO.h"
+#include "WDS_NTLM.h"
 #include "WDS_RIS.h"
 
 // #define	ALLOWALLARCHES					1
@@ -153,10 +154,13 @@ struct server_config
 	uint32_t RouterIP;
 
 	char server_root[255];
-
+	char OSCBasePath[128];
+	char Password[32];
 	int NeedsApproval;
 	uint16_t PollIntervall;
 	uint16_t TFTPRetryCount;
+	
+	uint8_t NTLMV2Enabled;
 	uint8_t VersionQuery;
 	uint8_t AllowServerSelection;
 	int DropUnkownClients;
@@ -194,11 +198,13 @@ struct Client_Info
 {
 	char Bootfile[128];
 	char BCDPath[64];
+	char HostName[64];
 
 	uint8_t hw_address[6];
 	uint8_t IPAddress[4];
 	
 	uint16_t ClientArch;
+	
 	int Version;
 	int WDSMode;
 	int Handled;
@@ -212,6 +218,9 @@ struct Server_Info
 	char dnsdomain[255];
 	char nbname[64];
 	char service[64];
+	char UserName[64];
+	char nbdomain[64];
+	char dnshostname[320];
 
 	uint32_t RequestID;
 } Server;

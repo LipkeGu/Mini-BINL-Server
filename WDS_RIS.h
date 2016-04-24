@@ -35,6 +35,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define PKT_OFF							0x46464f81	/* NTLM Reboot to new PXE ROM */
 #define PKT_REQ							0x51455281	/* Unknown */
 
+#define OSCHOOSER_TITLE				"Client Installation Wizard"
+#define OSCHOOSER_WELCOME			"Welcome to the Client Installation Wizard,<BR>To Install a Operating System Press [Enter]<BR><BR>To abort and restart the Computer press [F3]"
+#define OSCHOOSER_NOTFOUND			"The requested file \"%s\" worse not found on the Server."
+
+
+#define NTLMSSP_VER				0x0f
+#define NTVER_MAJOR				0x05
+#define NTVER_MINOR				0x02
+
 typedef struct _DRIVER
 {
 	uint16_t vid, pid;
@@ -42,7 +51,12 @@ typedef struct _DRIVER
 	char service[256];
 } DRIVER;
 
-int Handle_NCQ_Request(int con, char* Data, size_t Packetlen);
+int Handle_NCQ_Request(int con, char* Data, uint8_t mode, size_t Packetlen);
+int Handle_OSC_Request(int con, char* Data, uint8_t mode, size_t Packetlen);
+int Handle_OFF_Request(int con, char* Data, uint8_t mode, size_t Packetlen);
+int Handle_REQ_Request(int con, char* Data, uint8_t mode, size_t Packetlen);
+
+int Handle_NTLMSSP_Request(int con, char* Data, uint8_t mode, size_t Packetlen);
 int find_drv(uint16_t cvid, uint16_t cpid, DRIVER *drv);
 
 #ifndef _WIN32

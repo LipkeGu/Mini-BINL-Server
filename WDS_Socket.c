@@ -31,7 +31,7 @@ int CreateSocketandBind(uint16_t port, int SocketType, int AddressFamiliy, int P
 			setsockopt(sockfd, SOL_SOCKET, SO_BROADCAST, (const char*)&enabled, sizeof(int)) == 0)
 		{
 			memset(&_lsock, 0, sizeof(_lsock));
-			
+
 			_lsock.sin_family = AF_INET;
 			_lsock.sin_addr.s_addr = INADDR_ANY;
 			_lsock.sin_port = htons(port);
@@ -71,7 +71,7 @@ void DHCP_Thread()
 #endif
 {
 	memset(&bfrom, 0, sizeof(bfrom));
-	
+
 	int sockfd = CreateSocketandBind(67, SOCK_DGRAM, AF_INET, IPPROTO_IP);
 	int Retval = 0;
 
@@ -137,7 +137,7 @@ int bootp_start()
 #endif
 
 	Retval = gethostname(Server.nbname, sizeof(Server.nbname));
-
+	sprintf(Server.dnshostname, "%s.%s", Server.nbname, Server.dnsdomain);
 	Config.ServerIP = IP2Bytes(hostname_to_ip(Server.nbname));
 
 #ifdef _WIN32
@@ -184,9 +184,9 @@ int listening(int con, uint8_t mode)
 
 		if (Retval < 1)
 			continue;
-		
+
 		PacketSize = Retval;
-		
+
 		switch (Buffer[BOOTP_OFFSET_BOOTPTYPE])
 		{
 		case BOOTP_REQUEST: /* DHCP Request */
@@ -196,7 +196,7 @@ int listening(int con, uint8_t mode)
 					Client.isWDSRequest = 1;
 				else
 					Client.isWDSRequest = 0;
-				
+
 				if (Client.isWDSRequest == 1 && wdsnbp.ActionDone == 0)
 					memcpy(&Client.hw_address, &Buffer[BOOTP_OFFSET_MACADDR], Buffer[BOOTP_OFFSET_MACLEN]);
 				else
@@ -211,22 +211,24 @@ int listening(int con, uint8_t mode)
 			switch (SWAB32(MessageType))
 			{
 			case PKT_NCQ:
-				Retval = Handle_NCQ_Request(con, Buffer, PacketSize);
+				Retval = Handle_NCQ_Request(con, Buffer, mode, PacketSize);
 				break;
 			case PKT_RQU:
+				Retval = Handle_OSC_Request(con, Buffer, mode, PacketSize);
 				break;
 			case PKT_NEG:
-				break;
 			case PKT_AUT:
+				Retval = Handle_NTLMSSP_Request(con, Buffer, mode, PacketSize);
 				break;
 			case PKT_OFF:
+				Retval = Handle_OFF_Request(con, Buffer, mode, PacketSize);
 				break;
 			case PKT_REQ:
+				Retval = Handle_REQ_Request(con, Buffer, mode, PacketSize);
 				break;
 			default:
 				break;
 			}
-			break;
 		}
 	}
 

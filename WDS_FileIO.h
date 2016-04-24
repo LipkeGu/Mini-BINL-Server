@@ -19,6 +19,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define WDS_FILESYSTEM_H_
 
 int Exist(const char* Filename);
+int Write(const char* Filename, const char* Data, size_t Length);
+int Read(const char* Filename, char* dest, size_t Length);
+
 uint8_t GetClientRule(const uint8_t* hwadr);
 
 #endif /* WDS_FILESYSTEM_H_ */
