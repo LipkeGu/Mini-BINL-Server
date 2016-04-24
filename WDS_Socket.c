@@ -131,7 +131,6 @@ int bootp_start()
 	Retval = gethostname(Server.nbname, sizeof(Server.nbname));
 
 	Config.ServerIP = IP2Bytes(hostname_to_ip(Server.nbname));
-	Config.SubnetMask = IP2Bytes("255.255.255.0");
 
 	/* DHCP Thread (Handle this in Background) */
 
@@ -233,56 +232,6 @@ int listening(const char* Context, int con, int mode)
 	}
 
 	return Retval;
-}
-
-int validateDHCPPacket(char* Data, size_t packetlen)
-{
-	/* ensure that the packet is larger than 240 bytes */
-	if (packetlen < DHCP_MINIMAL_PACKET_SIZE)
-	{
-		sprintf(logbuffer, "[E] Packetl is too short!\n");
-		logger(logbuffer);
-
-		return 1;
-	}
-
-	if (Data[BOOTP_OFFSET_COOKIE] == htonl(DHCP_MAGIC_COOKIE) != 0)
-	{
-		sprintf(logbuffer, "[E] Cookie is not on the right place!\n");
-		logger(logbuffer);
-
-		return 1;
-	}
-
-	/* Clients requests has always zero as next server set */
-	if (Data[BOOTP_OFFSET_NEXTSERVER] != htonl(0))
-	{
-		sprintf(logbuffer, "[E] Client packet has next server set!\n");
-		logger(logbuffer);
-
-		return 1;
-	}
-
-	/* Transaction id should never be zero */
-	if (Data[BOOTP_OFFSET_TRANSID] == htonl(0))
-	{
-
-		sprintf(logbuffer, "[E] Transaction ID is invalid!\n");
-		logger(logbuffer);
-
-		return 1;
-	}
-
-	/* ensure that we have got only client packets! */
-	if (isValidDHCPType(Data[BOOTP_OFFSET_MSGTYPE]) == 1)
-	{
-		sprintf(logbuffer, "[E] Invalid (Client) MessageType!\n");
-		logger(logbuffer);
-
-		return 1;
-	}
-
-	return 0;
 }
 
 int Send(int con, char* data, size_t length, int mode)

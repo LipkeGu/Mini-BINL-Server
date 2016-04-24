@@ -142,14 +142,14 @@ int GetServerSettings()
 			if (fscanf(fil, "DropUnkownClients: %d\n", &Config.DropUnkownClients) < 1)
 				Config.DropUnkownClients = 0;
 
-			if (fscanf(fil, "CurrentIDs: %d\n", &wdsnbp.RequestID) < 1)
-				wdsnbp.RequestID = 1;
+			if (fscanf(fil, "CurrentIDs: %d\n", &Server.RequestID) < 1)
+				Server.RequestID = htonl(1);
 
 			if (fscanf(fil, "PollIntervall: %hu\n", &Config.PollIntervall) < 1)
-				Config.PollIntervall = SETTINGS_DEFAULT_POLLINTERVALL;
+				Config.PollIntervall = htons(SETTINGS_DEFAULT_POLLINTERVALL);
 			
 			if (fscanf(fil, "TFTPRetryCount: %hu\n", &Config.TFTPRetryCount) < 1)
-				Config.TFTPRetryCount = SETTINGS_DEFAULT_RETRYCOUNT;
+				Config.TFTPRetryCount = htons(SETTINGS_DEFAULT_RETRYCOUNT);
 			
 			if (fscanf(fil, "AllowUnknownClients: %d\n", &Config.AllowUnknownClients) < 1)
 				Config.AllowUnknownClients = SETTINGS_DEFAULT_ALLOWUNKCLIENTS;

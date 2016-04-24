@@ -82,8 +82,8 @@ static __inline void eol(FILE *fd);
 
 #ifndef SETTINGS_DEFAULT_WDSCONFIG
 #define SETTINGS_DEFAULT_ALLOWUNKCLIENTS		0
-#define SETTINGS_DEFAULT_POLLINTERVALL			9		
-#define SETTINGS_DEFAULT_RETRYCOUNT			9
+#define SETTINGS_DEFAULT_POLLINTERVALL			4		
+#define SETTINGS_DEFAULT_RETRYCOUNT			65535
 #define SETTINGS_DEFAULT_SHOWREQS				1
 #define SETTINGS_DEFAULT_DHCPMODE				1
 #define SETTINGS_DEFAULT_VERSIONQUERY			0
@@ -155,7 +155,6 @@ struct server_config
 	short DHCPPort;
 
 	uint32_t ServerIP;
-	uint32_t SubnetMask;
 	uint32_t ReferalIP;
 	uint32_t RouterIP;
 
@@ -200,7 +199,6 @@ struct wdsparams
 struct Client_Info
 {
 	unsigned char hw_address[6];
-	unsigned char ClientGuid[17];
 	unsigned char IPAddress[4];
 
 	char Bootfile[128];
@@ -221,7 +219,7 @@ struct Server_Info
 	char nbname[64];
 	char service[64];
 
-	int RequestID;
+	uint32_t RequestID;
 } Server;
 
 uint32_t IP2Bytes(const char* IP_address);

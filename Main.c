@@ -23,8 +23,8 @@ int main(int argc, char* argv[])
 	Config.BOOTPPort = 4011;
 	Config.DHCPPort = 67;
 
-	Config.ReferalIP = htonl(0);
-	Config.RouterIP = htonl(0);
+	Config.ReferalIP = 0;
+	Config.RouterIP = 0;
 
 	sprintf(Server.dnsdomain, "%s", WDS_DEFUALT_DOMAIN);
 
@@ -32,9 +32,9 @@ int main(int argc, char* argv[])
 
 	wdsnbp.ActionDone = 0;
 	wdsnbp.NextAction = WDSBP_OPTVAL_ACTION_APPROVAL;
-	wdsnbp.PollIntervall = Config.PollIntervall;
-	wdsnbp.RetryCount = Config.TFTPRetryCount;
-	wdsnbp.RequestID = 1;
+	wdsnbp.PollIntervall = htons(Config.PollIntervall);
+	wdsnbp.RetryCount = htons(Config.TFTPRetryCount);
+	wdsnbp.RequestID = htonl(Server.RequestID);
 	wdsnbp.PXEClientPrompt = Config.PXEClientPrompt;
 	wdsnbp.PXEPromptDone = 0;
 	wdsnbp.VersionQuery = Config.VersionQuery;
@@ -44,11 +44,6 @@ int main(int argc, char* argv[])
 	Client.WDSMode = 1;
 
 	Config.ShowClientRequests = 1;
-	if (Config.AllowUnknownClients == 1)
-		Config.NeedsApproval = 0;
-	else
-		Config.NeedsApproval = 1;
-
 	sprintf(Config.server_root, "%s", replace_str(WDS_SERVER_ROOT, "#", DS));
 
 	handle_args(argc, argv);

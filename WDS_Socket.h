@@ -46,7 +46,6 @@ DWORD WINAPI DHCP_Thread();
 DWORD WINAPI BOOTP_Thread();
 #endif
 
-int validateDHCPPacket(char* Data, size_t packetlen);
 int CreateSocketandBind(int port, int SocketType, int AddressFamiliy, int Protocol);
 
 int bootp_start();

@@ -19,17 +19,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 int GetClientinfo(int arch, unsigned char* hwadr, int found)
 {
-	if (wdsnbp.RequestID == 200)
-		wdsnbp.RequestID = 1;
-
 	if (found == 1 && Client.isWDSRequest == 1 && wdsnbp.ActionDone == 1)
 	{
 		switch (Client.WDSMode)
 		{
 		case WDS_MODE_RIS:
-			wdsnbp.RequestID = wdsnbp.RequestID + 1;
+			wdsnbp.RequestID += htonl(1);
 
-			sprintf(logbuffer, "============== RIS Client (%d) ==============\n", wdsnbp.RequestID);
+			sprintf(logbuffer, "============== RIS Client (%d) ==============\n", ntohl(wdsnbp.RequestID));
 			logger(logbuffer);
 
 			if (wdsnbp.NextAction != WDSBP_OPTVAL_ACTION_ABORT)
@@ -40,9 +37,9 @@ int GetClientinfo(int arch, unsigned char* hwadr, int found)
 			sprintf(Client.BCDPath, "\0");
 			break;
 		case WDS_MODE_WDS:
-			wdsnbp.RequestID = wdsnbp.RequestID + 1;
+			wdsnbp.RequestID += htonl(1);
 
-			sprintf(logbuffer, "============== WDS Client (%d) ==============\n", wdsnbp.RequestID);
+			sprintf(logbuffer, "============== WDS Client (%d) ==============\n", ntohl(wdsnbp.RequestID));
 			logger(logbuffer);
 
 			switch (arch)
@@ -94,9 +91,9 @@ int GetClientinfo(int arch, unsigned char* hwadr, int found)
 			}
 			break;
 		case WDS_MODE_UNK:
-			wdsnbp.RequestID = wdsnbp.RequestID + 1;
+			wdsnbp.RequestID += htonl(1);
 
-			sprintf(logbuffer, "============== PXE Client (%d) ==============\n", wdsnbp.RequestID);
+			sprintf(logbuffer, "============== PXE Client (%d) ==============\n", ntohl(wdsnbp.RequestID));
 			logger(logbuffer);
 
 			sprintf(Client.Bootfile, WDS_BOOTFILE_UNKNOWN);
@@ -278,13 +275,6 @@ int Handle_DHCP_Request(int con, char* Data, int found, int mode)
 
 	if (Client.isWDSRequest == 1)
 	{
-		/* Option Netmask (1) */
-		memcpy(&RESPData[RESPsize], netopt, sizeof(netopt));
-		Set_Size(sizeof(netopt));
-
-		memcpy(&RESPData[RESPsize], &Config.SubnetMask, sizeof(Config.SubnetMask));
-		Set_Size(sizeof(Config.SubnetMask));
-
 		/* Option Router (3) */
 		memcpy(&RESPData[RESPsize], Rtropt, sizeof(Rtropt));
 		Set_Size(sizeof(Rtropt));
@@ -447,7 +437,7 @@ int Handle_DHCP_Request(int con, char* Data, int found, int mode)
 		offset += sizeof(uint8_t);
 
 		strncpy(&tmpbuffer[offset], WDS_MSG_LOOKING_FOR_POLICY, strlen(WDS_MSG_LOOKING_FOR_POLICY));
-		offset += strlen(WDS_MSG_LOOKING_FOR_POLICY);
+		offset += (uint8_t)strlen(WDS_MSG_LOOKING_FOR_POLICY);
 
 		memcpy(&tmpbuffer[offset], DHCPEnd, sizeof(DHCPEnd));
 		offset += sizeof(uint8_t);
