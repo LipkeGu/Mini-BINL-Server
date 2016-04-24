@@ -249,7 +249,7 @@ void handle_args(int data_len, char* Data[]);
 void logger(char* text);
 void Set_Type(uint32_t NewType);
 void Set_Size(size_t Newsize);
-void Set_EoP(unsigned char neweop);
+void Set_EoP(uint8_t neweop);
 void Set_PKTLength();
 
 #endif /* WDS_H_ */
