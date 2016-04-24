@@ -60,14 +60,11 @@ static __inline void eol(FILE *fd);
 #define bcopy(b1,b2,len) (memmove((b2), (b1), (len)), (void) 0)
 
 #define HAVEFORKSUPPORT
-#define WDS_MSG_LOOKING_FOR_POLICY				"Server is looking for client policy..."
+#define WDS_MSG_LOOKING_FOR_POLICY				"Server is looking for Policies..."
 
 #define WDS_MODE_RIS							0
 #define WDS_MODE_WDS							1
 #define WDS_MODE_UNK							2
-
-#define DEBUGMODE								1
-
 
 #ifndef DS
 #define DS									"/"

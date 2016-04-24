@@ -116,21 +116,22 @@ void BOOTP_Thread()
 #endif
 }
 
-	int bootp_start()
-	{
-		int Retval = 0;
+int bootp_start()
+{
+	int Retval = 0;
 
 #ifdef _WIN32
-		WSADATA wsa;
-		DWORD myThreadID;
-		HANDLE ThreadID;
+	WSADATA wsa;
+	DWORD myThreadID;
+	HANDLE ThreadID;
 
-		Retval = WSAStartup(MAKEWORD(2, 2), &wsa);
-		if (Retval != 0)
-		{
-			printf("Failed to WinSock Context! (Error: %d)\n", WSAGetLastError());
-			return WSAGetLastError();
-		}
+	Retval = WSAStartup(MAKEWORD(2, 2), &wsa);
+	if (Retval != 0)
+	{
+		printf("Failed to WinSock Context! (Error: %d)\n", WSAGetLastError());
+
+		return WSAGetLastError();
+	}
 #else
 	pthread_t myThreadID;
 #endif
@@ -244,7 +245,7 @@ int Send(int con, const char* data, size_t length, uint8_t mode)
 		Retval = sendto(con, data, length, 0, (struct sockaddr*)&bfrom, sizeof(bfrom));
 	}
 
-#if DEBUGMODE == 1
+#ifdef DEBUG
 	if (Retval != SOCKET_ERROR && Retval > DHCP_MINIMAL_PACKET_SIZE)
 		printf("[D] Sent %d bytes to Client!\n", Retval);
 #endif
